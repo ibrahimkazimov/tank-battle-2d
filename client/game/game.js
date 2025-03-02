@@ -2,12 +2,13 @@ import { Player } from './player.js';
 import { WallManager } from './wall.js';
 import { Flag } from './flag.js';
 import { BulletManager } from './bullet.js';
-import { WIDTH, HEIGHT, BACKGROUND_COLOR } from '../constants.js';
+import { WIDTH, HEIGHT, BACKGROUND_COLOR, PLAYER2_SHOOT_INTERVAL } from '../constants.js';
 
 export class Game {
   constructor() {
     this.app = null;
     this.player = null;
+    this.player2 = null;
     this.wallManager = null;
     this.bulletManager = null;
     this.flag = null;
@@ -58,19 +59,21 @@ export class Game {
     this.wallManager = new WallManager(this.app, this.worldContainer);
     this.wallManager.createDefaultWalls();
     
-    this.player = new Player(this.app, this.wallManager);
+    // Create players at opposite corners
+    this.player = new Player(this.app, this.wallManager, false, -WIDTH/2 + 100, -HEIGHT/2 + 100);
+    this.player2 = new Player(this.app, this.wallManager, true, WIDTH/2 - 100, HEIGHT/2 - 100, this.worldContainer);
     
     this.bulletManager = new BulletManager(this.app, this.wallManager, this.worldContainer);
-    
-    // OPTINAL: Flag Feature 
-    // Create flag last so it appears on top
-    // this.flag = new Flag(this.app, this.worldContainer);
+    this.bulletManager.setPlayers([this.player, this.player2]);
     
     // Setup event listeners
     this.setupEventListeners();
     
     // Start game loop
     this.setupGameLoop();
+    
+    // Start AI shooting
+    this.startAIBehavior();
   }
   
   setupEventListeners() {
@@ -82,8 +85,10 @@ export class Game {
     
     // Mouse click for shooting
     this.app.stage.on("pointerdown", () => {
-      const turretPos = this.player.getTurretPosition();
-      this.bulletManager.createBullet(turretPos.x, turretPos.y, turretPos.rotation);
+      if (!this.player.isDead) {
+        const turretPos = this.player.getTurretPosition();
+        this.bulletManager.createBullet(turretPos.x, turretPos.y, turretPos.rotation, this.player);
+      }
     });
     
     // Keyboard controls
@@ -91,17 +96,6 @@ export class Game {
       if (this.arrowMap.hasOwnProperty(event.key)) {
         const mappedKey = this.arrowMap[event.key];
         this.keys[mappedKey] = true;
-        
-        // Handle flag pickup/drop
-        if (mappedKey === "F" && this.flag) {
-          if (!this.flag.isCarried && this.flag.isNearPlayer(this.player)) {
-            // Pickup flag
-            this.flag.pickup(this.player);
-          } else if (this.flag.isCarried) {
-            // Drop flag
-            this.flag.drop(this.player);
-          }
-        }
       }
     });
     
@@ -112,6 +106,25 @@ export class Game {
     });
   }
   
+  startAIBehavior() {
+    // AI shooting interval
+    setInterval(() => {
+      if (!this.player2.isDead) {
+        // Calculate angle to player
+        const dx = this.player.x - this.player2.x;
+        const dy = this.player.y - this.player2.y;
+        const rotation = Math.atan2(dy, dx);
+        
+        // Update AI turret rotation
+        this.player2.turret.rotation = rotation;
+        
+        // Fire bullet
+        const turretPos = this.player2.getTurretPosition();
+        this.bulletManager.createBullet(turretPos.x, turretPos.y, rotation, this.player2);
+      }
+    }, PLAYER2_SHOOT_INTERVAL);
+  }
+  
   setupGameLoop() {
     this.app.ticker.add(() => {
       // Update player position
@@ -120,9 +133,12 @@ export class Game {
       // Update world container position (opposite of player movement)
       this.worldContainer.x = -this.player.x;
       this.worldContainer.y = -this.player.y;
-      
-      // Update flag position if it's being carried
-      this.flag?.update(this.player);
     });
+  }
+  
+  destroy() {
+    this.player.destroy();
+    this.player2.destroy();
+    this.app.destroy();
   }
 }

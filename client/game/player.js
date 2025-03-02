@@ -1,18 +1,32 @@
-import { PLAYER_RADIUS, PLAYER_COLOR, PLAYER_SPEED, WIDTH, HEIGHT } from '../constants.js';
+import { PLAYER_RADIUS, PLAYER_COLOR, PLAYER_SPEED, WIDTH, HEIGHT, PLAYER_MAX_HEALTH, RESPAWN_TIME, PLAYER2_COLOR } from '../constants.js';
 import { Turret } from './turret.js';
 import { checkCollision } from '../utils/collision.js';
 
 export class Player {
-  constructor(app, wallManager) {
+  constructor(app, wallManager, isAI = false, spawnX = 0, spawnY = 0, worldContainer = null) {
     this.app = app;
     this.wallManager = wallManager;
     this.radius = PLAYER_RADIUS;
-    this.turret = new Turret(app);
+    this.isAI = isAI;
+    this.spawnX = spawnX;
+    this.spawnY = spawnY;
+    this.worldContainer = worldContainer;
+    this.health = PLAYER_MAX_HEALTH;
+    this.isDead = false;
+    this.respawnTimer = null;
+    
+    // Create turret first so it's behind the player
+    this.turret = new Turret(app, isAI, worldContainer);
+    if (isAI) {
+      this.turret.graphics.x = spawnX;
+      this.turret.graphics.y = spawnY;
+    }
+    
     this.graphics = this.createGraphics();
     
     // Set initial position
-    this._x = 0;
-    this._y = 0;
+    this._x = spawnX;
+    this._y = spawnY;
     
     // Add velocity properties
     this.velocityX = 0;
@@ -24,12 +38,20 @@ export class Player {
   
   createGraphics() {
     const player = new PIXI.Graphics();
-    player.context.fillStyle = PLAYER_COLOR;
+    player.context.fillStyle = this.isAI ? PLAYER2_COLOR : PLAYER_COLOR;
     player.context.circle(0, 0, PLAYER_RADIUS);
     player.context.fill();
-    player.x = WIDTH / 2;
-    player.y = HEIGHT / 2;
-    this.app.stage.addChild(player);
+    
+    // For AI, position in world coordinates. For player, keep centered
+    if (this.isAI) {
+      player.x = this.spawnX;
+      player.y = this.spawnY;
+      this.worldContainer.addChild(player);
+    } else {
+      player.x = WIDTH / 2;
+      player.y = HEIGHT / 2;
+      this.app.stage.addChild(player);
+    }
     return player;
   }
   
@@ -39,9 +61,11 @@ export class Player {
   
   set x(value) {
     this._x = value;
-    // Keep graphics centered
-    this.graphics.x = WIDTH / 2;
-    this.turret.x = WIDTH / 2;
+    if (!this.isAI) {
+      // Only update graphics for human player
+      this.graphics.x = WIDTH / 2;
+      this.turret.x = WIDTH / 2;
+    }
   }
   
   get y() {
@@ -50,12 +74,18 @@ export class Player {
   
   set y(value) {
     this._y = value;
-    // Keep graphics centered
-    this.graphics.y = HEIGHT / 2;
-    this.turret.y = HEIGHT / 2;
+    if (!this.isAI) {
+      // Only update graphics for human player
+      this.graphics.y = HEIGHT / 2;
+      this.turret.y = HEIGHT / 2;
+    }
   }
   
   update(keys) {
+    if (this.isDead) return;
+
+    if (this.isAI) return; // AI doesn't move at all
+
     // Apply acceleration based on input
     if (keys.ArrowLeft) {
       this.velocityX -= this.acceleration;
@@ -179,5 +209,45 @@ export class Player {
       y: HEIGHT / 2,
       rotation: this.turret.rotation
     };
+  }
+
+  takeDamage(damage) {
+    if (this.isDead) return;
+    
+    this.health -= damage;
+    if (this.health <= 0) {
+      this.die();
+    }
+  }
+
+  die() {
+    this.isDead = true;
+    this.health = 0;
+    this.graphics.visible = false;
+    this.turret.graphics.visible = false;
+
+    // Start respawn timer
+    this.respawnTimer = setTimeout(() => {
+      this.respawn();
+    }, RESPAWN_TIME);
+  }
+
+  respawn() {
+    this.isDead = false;
+    this.health = PLAYER_MAX_HEALTH;
+    this.x = this.spawnX;
+    this.y = this.spawnY;
+    this.velocityX = 0;
+    this.velocityY = 0;
+    this.graphics.visible = true;
+    this.turret.graphics.visible = true;
+  }
+
+  destroy() {
+    if (this.respawnTimer) {
+      clearTimeout(this.respawnTimer);
+    }
+    this.app.stage.removeChild(this.graphics);
+    this.turret.graphics.destroy();
   }
 }

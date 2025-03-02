@@ -1,9 +1,16 @@
 import { TURRET_WIDTH, TURRET_HEIGHT, TURRET_COLOR, WIDTH, HEIGHT } from '../constants.js';
 
 export class Turret {
-  constructor(app) {
+  constructor(app, isAI = false, worldContainer = null) {
     this.app = app;
+    this.isAI = isAI;
     this.graphics = this.createGraphics();
+    
+    if (isAI && worldContainer) {
+      worldContainer.addChild(this.graphics);
+    } else {
+      app.stage.addChild(this.graphics);
+    }
   }
   
   createGraphics() {
@@ -15,10 +22,13 @@ export class Turret {
     // Set the pivot point to the base of the turret
     turret.pivot.x = 0;
     turret.pivot.y = 0;
-    // Position turret at player center
-    turret.x = WIDTH / 2;
-    turret.y = HEIGHT / 2;
-    this.app.stage.addChild(turret);
+    
+    // Position turret at center for player, will be repositioned for AI
+    if (!this.isAI) {
+      turret.x = WIDTH / 2;
+      turret.y = HEIGHT / 2;
+    }
+    
     return turret;
   }
   
@@ -27,7 +37,9 @@ export class Turret {
   }
   
   set x(value) {
-    this.graphics.x = value;
+    if (!this.isAI) {
+      this.graphics.x = value;
+    }
   }
   
   get y() {
@@ -35,7 +47,9 @@ export class Turret {
   }
   
   set y(value) {
-    this.graphics.y = value;
+    if (!this.isAI) {
+      this.graphics.y = value;
+    }
   }
   
   get rotation() {

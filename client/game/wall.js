@@ -23,11 +23,11 @@ export class Wall {
 }
 
 export class WallManager {
-  constructor(app) {
+  constructor(app, worldContainer) {
     this.app = app;
     this.walls = [];
     this.wallContainer = new PIXI.Container();
-    app.stage.addChild(this.wallContainer);
+    worldContainer.addChild(this.wallContainer);
   }
   
   createWall(x, y, width, height) {
@@ -42,6 +42,17 @@ export class WallManager {
   
   // Generate some example walls
   createDefaultWalls() {
+    // Create walls to form a bounded area
+    // Left wall
+    this.createWall(-100, -100, 20, 1000);
+    // Right wall
+    this.createWall(1100, -100, 20, 1000);
+    // Top wall
+    this.createWall(-100, -100, 1220, 20);
+    // Bottom wall
+    this.createWall(-100, 900, 1220, 20);
+    
+    // Add some obstacles
     this.createWall(200, 100, 20, 200);  // Vertical wall
     this.createWall(500, 500, 200, 20);  // Horizontal wall
     this.createWall(800, 200, 20, 300);  // Another vertical wall

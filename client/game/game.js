@@ -11,6 +11,7 @@ export class Game {
     this.wallManager = null;
     this.bulletManager = null;
     this.flag = null;
+    this.worldContainer = null;
     this.keys = {
       ArrowLeft: false,
       ArrowRight: false,
@@ -49,16 +50,21 @@ export class Game {
     
     document.body.appendChild(this.app.canvas);
     
-    // Initialize game objects
-    this.wallManager = new WallManager(this.app);
-    this.wallManager.createDefaultWalls();
+    // Create world container for all game objects
+    this.worldContainer = new PIXI.Container();
+    this.app.stage.addChild(this.worldContainer);
     
-    this.bulletManager = new BulletManager(this.app, this.wallManager);
+    // Initialize game objects
+    this.wallManager = new WallManager(this.app, this.worldContainer);
+    this.wallManager.createDefaultWalls();
     
     this.player = new Player(this.app, this.wallManager);
     
+    this.bulletManager = new BulletManager(this.app, this.wallManager, this.worldContainer);
     
-    this.flag = new Flag(this.app);
+    // OPTINAL: Flag Feature 
+    // Create flag last so it appears on top
+    // this.flag = new Flag(this.app, this.worldContainer);
     
     // Setup event listeners
     this.setupEventListeners();
@@ -87,7 +93,7 @@ export class Game {
         this.keys[mappedKey] = true;
         
         // Handle flag pickup/drop
-        if (mappedKey === "F") {
+        if (mappedKey === "F" && this.flag) {
           if (!this.flag.isCarried && this.flag.isNearPlayer(this.player)) {
             // Pickup flag
             this.flag.pickup(this.player);
@@ -111,8 +117,12 @@ export class Game {
       // Update player position
       this.player.update(this.keys);
       
+      // Update world container position (opposite of player movement)
+      this.worldContainer.x = -this.player.x;
+      this.worldContainer.y = -this.player.y;
+      
       // Update flag position if it's being carried
-      this.flag.update(this.player);
+      this.flag?.update(this.player);
     });
   }
 }

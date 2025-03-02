@@ -2,12 +2,12 @@ import { BULLET_RADIUS, BULLET_COLOR, BULLET_SPEED, WIDTH, HEIGHT } from '../con
 import { checkCollision } from '../utils/collision.js';
 
 export class BulletManager {
-  constructor(app, wallManager) {
+  constructor(app, wallManager, worldContainer) {
     this.app = app;
     this.wallManager = wallManager;
     this.bullets = [];
     this.bulletContainer = new PIXI.Container();
-    app.stage.addChild(this.bulletContainer);
+    worldContainer.addChild(this.bulletContainer);
   }
   
   createBullet(x, y, rotation) {
@@ -17,8 +17,12 @@ export class BulletManager {
     bullet.context.fill();
     this.bulletContainer.addChild(bullet);
     
-    bullet.x = x;
-    bullet.y = y;
+    // Convert screen coordinates to world coordinates
+    const worldX = x - this.bulletContainer.parent.x;
+    const worldY = y - this.bulletContainer.parent.y;
+    
+    bullet.x = worldX;
+    bullet.y = worldY;
     bullet.rotation = rotation;
     bullet.vx = Math.cos(rotation) * BULLET_SPEED;
     bullet.vy = Math.sin(rotation) * BULLET_SPEED;
@@ -39,8 +43,12 @@ export class BulletManager {
         }
       }
 
+      // Get bullet's screen coordinates
+      const screenX = bullet.x + this.bulletContainer.parent.x;
+      const screenY = bullet.y + this.bulletContainer.parent.y;
+
       // destroy bullet if it goes off screen
-      if (bullet.x < 0 || bullet.x > WIDTH || bullet.y < 0 || bullet.y > HEIGHT) {
+      if (screenX < 0 || screenX > WIDTH || screenY < 0 || screenY > HEIGHT) {
         this.destroyBullet(bullet);
         this.app.ticker.remove(tickerCallback);
       }

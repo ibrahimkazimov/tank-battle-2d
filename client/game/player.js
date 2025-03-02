@@ -11,35 +11,41 @@ export class Player {
     this.graphics = this.createGraphics();
     
     // Set initial position
-    this.x = 0;
-    this.y = 0;
+    this._x = 0;
+    this._y = 0;
   }
   
   createGraphics() {
     const player = new PIXI.Graphics();
     player.context.fillStyle = PLAYER_COLOR;
-    player.context.circle(WIDTH / 2, HEIGHT / 2, PLAYER_RADIUS);
+    player.context.circle(0, 0, PLAYER_RADIUS);
     player.context.fill();
+    player.x = WIDTH / 2;
+    player.y = HEIGHT / 2;
     this.app.stage.addChild(player);
     return player;
   }
   
   get x() {
-    return this.graphics.x;
+    return this._x;
   }
   
   set x(value) {
-    this.graphics.x = value;
-    this.turret.x = value + WIDTH / 2;
+    this._x = value;
+    // Keep graphics centered
+    this.graphics.x = WIDTH / 2;
+    this.turret.x = WIDTH / 2;
   }
   
   get y() {
-    return this.graphics.y;
+    return this._y;
   }
   
   set y(value) {
-    this.graphics.y = value;
-    this.turret.y = value + HEIGHT / 2;
+    this._y = value;
+    // Keep graphics centered
+    this.graphics.y = HEIGHT / 2;
+    this.turret.y = HEIGHT / 2;
   }
   
   update(keys) {
@@ -61,35 +67,54 @@ export class Player {
       this.y = newY;
     }
 
-    // Keep player within boundaries
+    // Keep player within world boundaries
     this.enforceWorldBoundaries();
   }
   
   enforceWorldBoundaries() {
-    if (this.x < -WIDTH / 2) {
-      this.x = -WIDTH / 2;
+    // Assuming the world is twice the size of the viewport
+    const WORLD_BOUNDS = {
+      left: -WIDTH,
+      right: WIDTH,
+      top: -HEIGHT,
+      bottom: HEIGHT
+    };
+
+    if (this.x < WORLD_BOUNDS.left) {
+      this.x = WORLD_BOUNDS.left;
     }
-    if (this.x > WIDTH / 2) {
-      this.x = WIDTH / 2;
+    if (this.x > WORLD_BOUNDS.right) {
+      this.x = WORLD_BOUNDS.right;
     }
-    if (this.y < -HEIGHT / 2) {
-      this.y = -HEIGHT / 2;
+    if (this.y < WORLD_BOUNDS.top) {
+      this.y = WORLD_BOUNDS.top;
     }
-    if (this.y > HEIGHT / 2) {
-      this.y = HEIGHT / 2;
+    if (this.y > WORLD_BOUNDS.bottom) {
+      this.y = WORLD_BOUNDS.bottom;
     }
   }
   
   checkWallCollision(newX, newY) {
     const playerBounds = {
-      x: newX - PLAYER_RADIUS + WIDTH / 2,
-      y: newY - PLAYER_RADIUS + HEIGHT / 2,
+      x: WIDTH / 2 - PLAYER_RADIUS,
+      y: HEIGHT / 2 - PLAYER_RADIUS,
       width: PLAYER_RADIUS * 2,
       height: PLAYER_RADIUS * 2,
     };
 
+    // Adjust for world position
+    const worldX = -newX;
+    const worldY = -newY;
+
     for (const wall of this.wallManager.getWalls()) {
-      if (checkCollision(playerBounds, wall.graphics)) {
+      const adjustedWall = {
+        x: wall.graphics.x + worldX,
+        y: wall.graphics.y + worldY,
+        width: wall.graphics.width,
+        height: wall.graphics.height
+      };
+
+      if (checkCollision(playerBounds, adjustedWall)) {
         return true;
       }
     }
@@ -97,13 +122,16 @@ export class Player {
   }
   
   updateTurretRotation(mouseX, mouseY) {
-    this.turret.updateRotation(mouseX, mouseY, this.x, this.y);
+    // Calculate angle between center of screen and mouse position
+    const dx = mouseX - WIDTH / 2;
+    const dy = mouseY - HEIGHT / 2;
+    this.turret.rotation = Math.atan2(dy, dx);
   }
   
   getTurretPosition() {
     return {
-      x: this.turret.x,
-      y: this.turret.y,
+      x: WIDTH / 2,
+      y: HEIGHT / 2,
       rotation: this.turret.rotation
     };
   }

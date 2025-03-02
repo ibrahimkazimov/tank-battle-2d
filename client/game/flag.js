@@ -2,11 +2,11 @@ import { FLAG_COLOR, FLAG_SIZE, WIDTH, HEIGHT } from '../constants.js';
 import { getDistance } from '../utils/collision.js';
 
 export class Flag {
-  constructor(app) {
+  constructor(app, worldContainer) {
     this.app = app;
     this.isCarried = false;
     this.flagContainer = new PIXI.Container();
-    app.stage.addChild(this.flagContainer);
+    worldContainer.addChild(this.flagContainer);
     this.graphics = this.createGraphics();
   }
   
@@ -39,9 +39,15 @@ export class Flag {
   }
   
   isNearPlayer(player) {
-    const playerCenterX = player.x + WIDTH / 2;
-    const playerCenterY = player.y + HEIGHT / 2;
-    const distance = getDistance(playerCenterX, playerCenterY, this.x, this.y);
+    // Convert player's world position to screen coordinates
+    const screenX = WIDTH / 2;
+    const screenY = HEIGHT / 2;
+    
+    // Convert flag's position to screen coordinates
+    const flagScreenX = this.x + this.flagContainer.parent.x;
+    const flagScreenY = this.y + this.flagContainer.parent.y;
+    
+    const distance = getDistance(screenX, screenY, flagScreenX, flagScreenY);
     return distance < player.radius + FLAG_SIZE;
   }
   
@@ -56,8 +62,9 @@ export class Flag {
   drop(player) {
     if (this.isCarried) {
       this.isCarried = false;
-      this.x = player.x + WIDTH / 2;
-      this.y = player.y + HEIGHT / 2;
+      // Convert screen center to world coordinates
+      this.x = WIDTH / 2 - this.flagContainer.parent.x;
+      this.y = HEIGHT / 2 - this.flagContainer.parent.y;
       return true;
     }
     return false;
@@ -65,8 +72,9 @@ export class Flag {
   
   update(player) {
     if (this.isCarried) {
-      this.x = player.x + WIDTH / 2;
-      this.y = player.y + HEIGHT / 2;
+      // Convert screen center to world coordinates
+      this.x = WIDTH / 2 - this.flagContainer.parent.x;
+      this.y = HEIGHT / 2 - this.flagContainer.parent.y;
     }
   }
 }

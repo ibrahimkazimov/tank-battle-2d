@@ -2,6 +2,7 @@ export const HEIGHT = 720;
 export const WIDTH = 1280;
 export const PLAYER_RADIUS = 10;
 export const PLAYER_SPEED = 1;
+export const PLAYER_HEALTH = 100;
 export const TURRET_WIDTH = 10;
 export const TURRET_HEIGHT = 20;
 export const BULLET_RADIUS = 5;

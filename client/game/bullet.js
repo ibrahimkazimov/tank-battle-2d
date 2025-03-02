@@ -1,4 +1,4 @@
-import { BULLET_RADIUS, BULLET_COLOR, BULLET_SPEED } from '../constants.js';
+import { BULLET_RADIUS, BULLET_COLOR, BULLET_SPEED, WIDTH, HEIGHT } from '../constants.js';
 import { checkCollision } from '../utils/collision.js';
 
 export class BulletManager {
@@ -38,6 +38,12 @@ export class BulletManager {
           this.bullets.splice(index, 1);
         }
       }
+
+      // destroy bullet if it goes off screen
+      if (bullet.x < 0 || bullet.x > WIDTH || bullet.y < 0 || bullet.y > HEIGHT) {
+        this.destroyBullet(bullet);
+        this.app.ticker.remove(tickerCallback);
+      }
     };
 
     this.app.ticker.add(tickerCallback);
@@ -58,5 +64,13 @@ export class BulletManager {
       }
     }
     return false;
+  }
+
+  destroyBullet(bullet) {
+    this.bulletContainer.removeChild(bullet);
+    const index = this.bullets.indexOf(bullet);
+    if (index > -1) {
+      this.bullets.splice(index, 1);
+    }
   }
 }

@@ -13,6 +13,13 @@ export class Player {
     // Set initial position
     this._x = 0;
     this._y = 0;
+    
+    // Add velocity properties
+    this.velocityX = 0;
+    this.velocityY = 0;
+    this.acceleration = 0.5;  // Acceleration when moving
+    this.friction = 0.95;     // Friction to slow down when not moving (value between 0 and 1)
+    this.maxSpeed = PLAYER_SPEED * 2;  // Maximum speed the tank can reach
   }
   
   createGraphics() {
@@ -49,30 +56,64 @@ export class Player {
   }
   
   update(keys) {
-    let newX = this.x;
-    let newY = this.y;
-
-    // Calculate new position based on keys
-    if (keys.ArrowLeft) newX -= PLAYER_SPEED;
-    if (keys.ArrowRight) newX += PLAYER_SPEED;
-    if (keys.ArrowUp) newY -= PLAYER_SPEED;
-    if (keys.ArrowDown) newY += PLAYER_SPEED;
-
+    // Apply acceleration based on input
+    if (keys.ArrowLeft) {
+      this.velocityX -= this.acceleration;
+    }
+    if (keys.ArrowRight) {
+      this.velocityX += this.acceleration;
+    }
+    if (keys.ArrowUp) {
+      this.velocityY -= this.acceleration;
+    }
+    if (keys.ArrowDown) {
+      this.velocityY += this.acceleration;
+    }
+    
+    // Apply friction when no input is given
+    if (!keys.ArrowLeft && !keys.ArrowRight) {
+      this.velocityX *= this.friction;
+    }
+    if (!keys.ArrowUp && !keys.ArrowDown) {
+      this.velocityY *= this.friction;
+    }
+    
+    // Limit maximum speed
+    const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
+    if (speed > this.maxSpeed) {
+      const scale = this.maxSpeed / speed;
+      this.velocityX *= scale;
+      this.velocityY *= scale;
+    }
+    
+    // Stop very small movements to prevent endless sliding
+    if (Math.abs(this.velocityX) < 0.01) this.velocityX = 0;
+    if (Math.abs(this.velocityY) < 0.01) this.velocityY = 0;
+    
+    // Calculate new position
+    let newX = this.x + this.velocityX;
+    let newY = this.y + this.velocityY;
+    
     // Check for wall collisions before updating position
     if (!this.checkWallCollision(newX, this.y)) {
       this.x = newX;
+    } else {
+      // Stop horizontal movement on collision
+      this.velocityX = 0;
     }
     
     if (!this.checkWallCollision(this.x, newY)) {
       this.y = newY;
+    } else {
+      // Stop vertical movement on collision
+      this.velocityY = 0;
     }
-
+    
     // Keep player within world boundaries
     this.enforceWorldBoundaries();
   }
   
   enforceWorldBoundaries() {
-    // Assuming the world is twice the size of the viewport
     const WORLD_BOUNDS = {
       left: -WIDTH,
       right: WIDTH,
@@ -82,15 +123,19 @@ export class Player {
 
     if (this.x < WORLD_BOUNDS.left) {
       this.x = WORLD_BOUNDS.left;
+      this.velocityX = 0;  // Stop horizontal movement at boundary
     }
     if (this.x > WORLD_BOUNDS.right) {
       this.x = WORLD_BOUNDS.right;
+      this.velocityX = 0;  // Stop horizontal movement at boundary
     }
     if (this.y < WORLD_BOUNDS.top) {
       this.y = WORLD_BOUNDS.top;
+      this.velocityY = 0;  // Stop vertical movement at boundary
     }
     if (this.y > WORLD_BOUNDS.bottom) {
       this.y = WORLD_BOUNDS.bottom;
+      this.velocityY = 0;  // Stop vertical movement at boundary
     }
   }
   

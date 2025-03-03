@@ -70,8 +70,10 @@ export class BulletManager {
       const screenX = bullet.x + this.worldContainer.x;
       const screenY = bullet.y + this.worldContainer.y;
 
-      // destroy bullet if it goes off screen
-      if (screenX < 0 || screenX > WIDTH || screenY < 0 || screenY > HEIGHT) {
+      // Use a larger boundary to prevent premature destruction
+      const buffer = WIDTH / 2;  // Add a buffer zone
+      if (screenX < -buffer || screenX > WIDTH + buffer || 
+          screenY < -buffer || screenY > HEIGHT + buffer) {
         this.destroyBullet(bullet);
         this.app.ticker.remove(tickerCallback);
       }

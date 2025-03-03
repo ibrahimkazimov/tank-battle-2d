@@ -48,6 +48,7 @@ export class Player {
       player.y = this.spawnY;
       this.worldContainer.addChild(player);
     } else {
+      // Center player in logical coordinates
       player.x = WIDTH / 2;
       player.y = HEIGHT / 2;
       this.app.stage.addChild(player);
@@ -62,9 +63,12 @@ export class Player {
   set x(value) {
     this._x = value;
     if (!this.isAI) {
-      // Only update graphics for human player
+      // Keep player centered in logical coordinates
       this.graphics.x = WIDTH / 2;
       this.turret.x = WIDTH / 2;
+    } else {
+      this.graphics.x = value;
+      this.turret.graphics.x = value;
     }
   }
   
@@ -75,40 +79,36 @@ export class Player {
   set y(value) {
     this._y = value;
     if (!this.isAI) {
-      // Only update graphics for human player
+      // Keep player centered in logical coordinates
       this.graphics.y = HEIGHT / 2;
       this.turret.y = HEIGHT / 2;
+    } else {
+      this.graphics.y = value;
+      this.turret.graphics.y = value;
     }
   }
   
   update(keys) {
     if (this.isDead) return;
-
-    if (this.isAI) return; // AI doesn't move at all
-
-    // Apply acceleration based on input
-    if (keys.ArrowLeft) {
-      this.velocityX -= this.acceleration;
-    }
-    if (keys.ArrowRight) {
-      this.velocityX += this.acceleration;
-    }
-    if (keys.ArrowUp) {
-      this.velocityY -= this.acceleration;
-    }
-    if (keys.ArrowDown) {
-      this.velocityY += this.acceleration;
-    }
     
-    // Apply friction when no input is given
-    if (!keys.ArrowLeft && !keys.ArrowRight) {
-      this.velocityX *= this.friction;
-    }
-    if (!keys.ArrowUp && !keys.ArrowDown) {
-      this.velocityY *= this.friction;
-    }
+    // Calculate acceleration based on input
+    let ax = 0;
+    let ay = 0;
     
-    // Limit maximum speed
+    if (keys.ArrowLeft) ax -= this.acceleration;
+    if (keys.ArrowRight) ax += this.acceleration;
+    if (keys.ArrowUp) ay -= this.acceleration;
+    if (keys.ArrowDown) ay += this.acceleration;
+    
+    // Apply acceleration to velocity
+    this.velocityX += ax;
+    this.velocityY += ay;
+    
+    // Apply friction
+    this.velocityX *= this.friction;
+    this.velocityY *= this.friction;
+    
+    // Limit speed
     const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
     if (speed > this.maxSpeed) {
       const scale = this.maxSpeed / speed;
@@ -116,31 +116,39 @@ export class Player {
       this.velocityY *= scale;
     }
     
-    // Stop very small movements to prevent endless sliding
-    if (Math.abs(this.velocityX) < 0.01) this.velocityX = 0;
-    if (Math.abs(this.velocityY) < 0.01) this.velocityY = 0;
-    
     // Calculate new position
-    let newX = this.x + this.velocityX;
-    let newY = this.y + this.velocityY;
+    const newX = this.x + this.velocityX;
+    const newY = this.y + this.velocityY;
     
-    // Check for wall collisions before updating position
-    if (!this.checkWallCollision(newX, this.y)) {
+    // Check for collisions before updating position
+    if (!this.checkWallCollision(newX, newY)) {
       this.x = newX;
-    } else {
-      // Stop horizontal movement on collision
-      this.velocityX = 0;
-    }
-    
-    if (!this.checkWallCollision(this.x, newY)) {
       this.y = newY;
     } else {
-      // Stop vertical movement on collision
+      // On collision, stop movement in that direction
+      this.velocityX = 0;
       this.velocityY = 0;
     }
     
-    // Keep player within world boundaries
+    // Enforce world boundaries
     this.enforceWorldBoundaries();
+  }
+  
+  updateTurretRotation(mouseX, mouseY) {
+    if (!this.isAI) {
+      // Calculate angle between player center and mouse position in logical coordinates
+      const dx = mouseX - WIDTH / 2;
+      const dy = mouseY - HEIGHT / 2;
+      this.turret.rotation = Math.atan2(dy, dx);
+    }
+  }
+  
+  getTurretPosition() {
+    return {
+      x: this.x,
+      y: this.y,
+      rotation: this.turret.rotation
+    };
   }
   
   enforceWorldBoundaries() {
@@ -194,21 +202,6 @@ export class Player {
       }
     }
     return false;
-  }
-  
-  updateTurretRotation(mouseX, mouseY) {
-    // Calculate angle between center of screen and mouse position
-    const dx = mouseX - WIDTH / 2;
-    const dy = mouseY - HEIGHT / 2;
-    this.turret.rotation = Math.atan2(dy, dx);
-  }
-  
-  getTurretPosition() {
-    return {
-      x: WIDTH / 2,
-      y: HEIGHT / 2,
-      rotation: this.turret.rotation
-    };
   }
 
   takeDamage(damage) {

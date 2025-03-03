@@ -37,9 +37,7 @@ export class Turret {
   }
   
   set x(value) {
-    if (!this.isAI) {
-      this.graphics.x = value;
-    }
+    this.graphics.x = value;
   }
   
   get y() {
@@ -47,9 +45,7 @@ export class Turret {
   }
   
   set y(value) {
-    if (!this.isAI) {
-      this.graphics.y = value;
-    }
+    this.graphics.y = value;
   }
   
   get rotation() {

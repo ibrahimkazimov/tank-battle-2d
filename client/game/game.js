@@ -13,6 +13,10 @@ export class Game {
     this.bulletManager = null;
     this.flag = null;
     this.worldContainer = null;
+    this.gameScale = 1;
+    this.logicalWidth = WIDTH;
+    this.logicalHeight = HEIGHT;
+    
     this.keys = {
       ArrowLeft: false,
       ArrowRight: false,
@@ -35,14 +39,36 @@ export class Game {
     };
   }
   
+  calculateScale() {
+    // Get the window dimensions
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Calculate scale based on the smaller ratio to maintain aspect ratio
+    const scaleX = windowWidth / this.logicalWidth;
+    const scaleY = windowHeight / this.logicalHeight;
+    this.gameScale = Math.min(scaleX, scaleY);
+    
+    // Update the renderer size
+    this.app.renderer.resize(windowWidth, windowHeight);
+    
+    // Center the game stage
+    const scaledWidth = this.logicalWidth * this.gameScale;
+    const scaledHeight = this.logicalHeight * this.gameScale;
+    this.app.stage.scale.set(this.gameScale);
+    this.app.stage.position.x = (windowWidth - scaledWidth) / 2;
+    this.app.stage.position.y = (windowHeight - scaledHeight) / 2;
+  }
+  
   async init() {
-    // Initialize PIXI application
+    // Initialize PIXI application with responsive size
     this.app = new PIXI.Application();
     await this.app.init({
-      width: WIDTH,
-      height: HEIGHT,
+      width: window.innerWidth,
+      height: window.innerHeight,
       eventMode: "static",
       background: BACKGROUND_COLOR,
+      resolution: window.devicePixelRatio || 1,
     });
     
     // Make stage interactive and ensure it covers the full canvas
@@ -55,13 +81,17 @@ export class Game {
     this.worldContainer = new PIXI.Container();
     this.app.stage.addChild(this.worldContainer);
     
+    // Set up responsive handling
+    this.calculateScale();
+    window.addEventListener('resize', () => this.calculateScale());
+    
     // Initialize game objects
     this.wallManager = new WallManager(this.app, this.worldContainer);
     this.wallManager.createDefaultWalls();
     
     // Create players at opposite corners
-    this.player = new Player(this.app, this.wallManager, false, -WIDTH/2 + 100, -HEIGHT/2 + 100);
-    this.player2 = new Player(this.app, this.wallManager, true, WIDTH/2 - 100, HEIGHT/2 - 100, this.worldContainer);
+    this.player = new Player(this.app, this.wallManager, false, -this.logicalWidth/2 + 100, -this.logicalHeight/2 + 100);
+    this.player2 = new Player(this.app, this.wallManager, true, this.logicalWidth/2 - 100, this.logicalHeight/2 - 100, this.worldContainer);
     
     this.bulletManager = new BulletManager(this.app, this.wallManager, this.worldContainer);
     this.bulletManager.setPlayers([this.player, this.player2]);
@@ -77,10 +107,13 @@ export class Game {
   }
   
   setupEventListeners() {
-    // Mouse movement for turret rotation
+    // Mouse movement for turret rotation - adjust for scale
     this.app.stage.on("pointermove", (event) => {
       const mousePosition = event.data.global;
-      this.player.updateTurretRotation(mousePosition.x, mousePosition.y);
+      // Convert screen coordinates to logical game coordinates
+      const logicalX = (mousePosition.x - this.app.stage.position.x) / this.gameScale;
+      const logicalY = (mousePosition.y - this.app.stage.position.y) / this.gameScale;
+      this.player.updateTurretRotation(logicalX, logicalY);
     });
     
     // Mouse click for shooting

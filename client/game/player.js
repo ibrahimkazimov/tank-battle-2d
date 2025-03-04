@@ -143,9 +143,19 @@ export class Player {
       this.x = newX;
       this.y = newY;
     } else {
-      // On collision, stop movement in that direction
-      this.velocityX = 0;
-      this.velocityY = 0;
+      // Try moving only horizontally
+      const horizontalX = this.x + this.velocityX;
+      const horizontalY = this.y;
+      if (!this.checkWallCollision(horizontalX, horizontalY)) {
+        this.x = horizontalX;
+      }
+      
+      // Try moving only vertically
+      const verticalX = this.x;
+      const verticalY = this.y + this.velocityY;
+      if (!this.checkWallCollision(verticalX, verticalY)) {
+        this.y = verticalY;
+      }
     }
     
     // Enforce world boundaries
@@ -216,6 +226,21 @@ export class Player {
       };
 
       if (checkCircleRectCollision(playerCircle, adjustedWall)) {
+        // Calculate wall normal (perpendicular to wall surface)
+        const isVerticalWall = adjustedWall.width < adjustedWall.height;
+        const normalX = isVerticalWall ? 1 : 0;
+        const normalY = isVerticalWall ? 0 : 1;
+
+        // Calculate dot product of velocity and normal
+        const dotProduct = this.velocityX * normalX + this.velocityY * normalY;
+
+        // If moving towards the wall
+        if (dotProduct < 0) {
+          // Project velocity onto the wall plane
+          this.velocityX = this.velocityX - dotProduct * normalX;
+          this.velocityY = this.velocityY - dotProduct * normalY;
+        }
+
         return true;
       }
     }

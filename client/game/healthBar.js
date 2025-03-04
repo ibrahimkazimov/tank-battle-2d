@@ -37,15 +37,18 @@ export class HealthBar {
     container.addChild(this.healthBar);
 
     // Player name
-    this.nameText = new PIXI.Text('Player', {
-      fontFamily: 'Arial',
-      fontSize: 16,
-      fill: '#ffffff',
-      align: 'center',
-      dropShadow: true,
-      dropShadowColor: '#000000',
-      dropShadowBlur: 4,
-      dropShadowDistance: 2
+    this.nameText = new PIXI.Text({
+      text: 'Player',
+      style: {
+        fontFamily: 'Arial',
+        fontSize: 16,
+        fill: '#ffffff',
+        align: 'center',
+        dropShadow: true,
+        dropShadowColor: '#000000',
+        dropShadowBlur: 4,
+        dropShadowDistance: 2
+      }
     });
     this.nameText.x = this.width / 2 - this.nameText.width / 2;
     this.nameText.y = -20; // Position above the health bar

@@ -14,6 +14,9 @@ export class BulletManager {
   }
   
   createBullet(x, y, rotation, sourcePlayer) {
+    // Trigger turret recoil animation
+    sourcePlayer.turret.fire();
+
     const bullet = new PIXI.Graphics();
     bullet.context.fillStyle = BULLET_COLOR;
     bullet.context.circle(0, 0, BULLET_RADIUS);

@@ -14,6 +14,7 @@ export class Player {
     this.health = PLAYER_MAX_HEALTH;
     this.isDead = false;
     this.respawnTimer = null;
+    this.explosionParticles = [];
     
     // Create turret first so it's behind the player
     this.turret = new Turret(app, isAI, worldContainer);
@@ -65,7 +66,10 @@ export class Player {
     if (!this.isAI) {
       // Keep player centered in logical coordinates
       this.graphics.x = WIDTH / 2;
-      this.turret.x = WIDTH / 2;
+      // Only set turret x if it's not in recoil animation
+      if (!this.turret.recoilAnimation) {
+        this.turret.x = WIDTH / 2;
+      }
     } else {
       this.graphics.x = value;
       this.turret.graphics.x = value;
@@ -81,7 +85,10 @@ export class Player {
     if (!this.isAI) {
       // Keep player centered in logical coordinates
       this.graphics.y = HEIGHT / 2;
-      this.turret.y = HEIGHT / 2;
+      // Only set turret y if it's not in recoil animation
+      if (!this.turret.recoilAnimation) {
+        this.turret.y = HEIGHT / 2;
+      }
     } else {
       this.graphics.y = value;
       this.turret.graphics.y = value;
@@ -213,9 +220,78 @@ export class Player {
     }
   }
 
+  createExplosion() {
+    const numParticles = 16;
+    const particleSpeed = 3;
+    const particleSize = 4;
+    const particleColor = this.isAI ? PLAYER2_COLOR : PLAYER_COLOR;
+    
+    for (let i = 0; i < numParticles; i++) {
+      const angle = (i / numParticles) * Math.PI * 2;
+      const particle = new PIXI.Graphics();
+      
+      // Draw particle
+      particle.context.fillStyle = particleColor;
+      particle.context.circle(0, 0, particleSize);
+      particle.context.fill();
+      
+      // Position particle at player center
+      if (this.isAI) {
+        particle.x = this.x;
+        particle.y = this.y;
+      } else {
+        // For main player, use screen center coordinates
+        particle.x = WIDTH / 2;
+        particle.y = HEIGHT / 2;
+      }
+      
+      // Add to appropriate container
+      if (this.isAI && this.worldContainer) {
+        this.worldContainer.addChild(particle);
+      } else {
+        this.app.stage.addChild(particle);
+      }
+      
+      // Set particle velocity
+      particle.vx = Math.cos(angle) * particleSpeed;
+      particle.vy = Math.sin(angle) * particleSpeed;
+      
+      // Add fade out animation
+      const fadeOut = () => {
+        particle.alpha -= 0.03;
+        if (particle.alpha <= 0) {
+          if (this.isAI && this.worldContainer) {
+            this.worldContainer.removeChild(particle);
+          } else {
+            this.app.stage.removeChild(particle);
+          }
+          const index = this.explosionParticles.indexOf(particle);
+          if (index > -1) {
+            this.explosionParticles.splice(index, 1);
+          }
+        }
+      };
+      
+      // Add movement animation
+      const move = () => {
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+      };
+      
+      this.app.ticker.add(move);
+      this.app.ticker.add(fadeOut);
+      this.explosionParticles.push(particle);
+    }
+  }
+
   die() {
     this.isDead = true;
     this.health = 0;
+    
+    // Create explosion effect
+    this.createExplosion();
+    
+    // Hide player and turret
     this.graphics.visible = false;
     this.turret.graphics.visible = false;
 
@@ -223,6 +299,17 @@ export class Player {
     this.respawnTimer = setTimeout(() => {
       this.respawn();
     }, RESPAWN_TIME);
+  }
+
+
+  clearExplosionParticles() {
+    for (const particle of this.explosionParticles) {
+      if (this.isAI && this.worldContainer) {
+        this.worldContainer.removeChild(particle);
+      } else {
+        this.app.stage.removeChild(particle);
+      }
+    }
   }
 
   respawn() {
@@ -234,12 +321,21 @@ export class Player {
     this.velocityY = 0;
     this.graphics.visible = true;
     this.turret.graphics.visible = true;
+    
+    // Clean up any remaining explosion particles
+    this.clearExplosionParticles();
+    
+    this.explosionParticles = [];
   }
 
   destroy() {
     if (this.respawnTimer) {
       clearTimeout(this.respawnTimer);
     }
+    
+    // Clean up explosion particles
+    this.clearExplosionParticles();
+    
     this.app.stage.removeChild(this.graphics);
     this.turret.graphics.destroy();
   }

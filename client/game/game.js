@@ -175,6 +175,9 @@ export class Game {
       // Update player position
       this.player.update(this.keys);
       
+      // Update AI position
+      this.player2.update({});  // Pass empty keys object since AI doesn't use keyboard input
+      
       // Update world container position (opposite of player movement)
       this.worldContainer.x = -this.player.x;
       this.worldContainer.y = -this.player.y;

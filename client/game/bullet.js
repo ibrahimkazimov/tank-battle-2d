@@ -1,4 +1,4 @@
-import { BULLET_RADIUS, BULLET_COLOR, BULLET_SPEED, WIDTH, HEIGHT, BULLET_DAMAGE, TURRET_HEIGHT } from '../constants.js';
+import { BULLET_RADIUS, BULLET_COLOR, BULLET_SPEED, WIDTH, HEIGHT, BULLET_DAMAGE, TURRET_HEIGHT, BULLET_FORCE } from '../constants.js';
 import { checkCollision, getDistance } from '../utils/collision.js';
 
 export class BulletManager {
@@ -130,7 +130,31 @@ export class BulletManager {
       const distance = getDistance(bulletScreenX, bulletScreenY, playerScreenX, playerScreenY);
       
       if (distance < BULLET_RADIUS + player.radius) {
+        // Apply damage
         player.takeDamage(BULLET_DAMAGE);
+        
+        // Calculate force direction based on bullet's velocity
+        const bulletSpeed = Math.sqrt(bullet.vx * bullet.vx + bullet.vy * bullet.vy);
+        let forceX, forceY;
+        
+        if (player.isAI) {
+          // For AI, use bullet's world velocity directly since AI is in world coordinates
+          forceX = bullet.vx;
+          forceY = bullet.vy;
+        } else {
+          // For player, use bullet's world velocity directly since player is in screen coordinates
+          forceX = bullet.vx;
+          forceY = bullet.vy;
+        }
+        
+        // Normalize and scale the force
+        const length = Math.sqrt(forceX * forceX + forceY * forceY);
+        forceX = (forceX / length) * BULLET_FORCE;
+        forceY = (forceY / length) * BULLET_FORCE;
+        
+        // Apply force
+        player.applyForce(forceX, forceY);
+        
         return true;
       }
     }

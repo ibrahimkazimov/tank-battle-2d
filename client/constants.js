@@ -20,6 +20,7 @@ export const FLAG_SIZE = 15;
 // Player Constants
 export const PLAYER_MAX_HEALTH = 100;
 export const BULLET_DAMAGE = 20;
+export const BULLET_FORCE = 5; // Force applied to player when hit by a bullet
 export const PLAYER2_COLOR = "#FF5533";
 export const RESPAWN_TIME = 5000; // 5 seconds in milliseconds
 export const PLAYER2_SHOOT_INTERVAL = 2000; // 2 seconds between shots

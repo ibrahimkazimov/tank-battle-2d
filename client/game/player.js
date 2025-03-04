@@ -237,6 +237,29 @@ export class Player {
     }
   }
 
+  applyForce(forceX, forceY) {
+    if (this.isDead) return;
+    
+    // Add force to current velocity
+    if (this.isAI) {
+      // For AI, apply force in world coordinates
+      this.velocityX += forceX;
+      this.velocityY += forceY;
+    } else {
+      // For player, apply force in screen coordinates
+      this.velocityX += forceX;
+      this.velocityY += forceY;
+    }
+    
+    // Limit speed after force application
+    const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
+    if (speed > this.maxSpeed) {
+      const scale = this.maxSpeed / speed;
+      this.velocityX *= scale;
+      this.velocityY *= scale;
+    }
+  }
+
   createExplosion() {
     const numParticles = 16;
     const particleSpeed = 3;

@@ -1,6 +1,7 @@
 import { PLAYER_RADIUS, PLAYER_COLOR, PLAYER_SPEED, WIDTH, HEIGHT, PLAYER_MAX_HEALTH, RESPAWN_TIME, PLAYER2_COLOR } from '../constants.js';
 import { Turret } from './turret.js';
 import { checkCollision } from '../utils/collision.js';
+import { HealthBar } from './healthBar.js';
 
 export class Player {
   constructor(app, wallManager, isAI = false, spawnX = 0, spawnY = 0, worldContainer = null) {
@@ -24,6 +25,13 @@ export class Player {
     }
     
     this.graphics = this.createGraphics();
+    
+    // Create health bar for main player only
+    if (!isAI) {
+      this.healthBar = new HealthBar(app);
+      this.healthBar.update(this.health);
+      this.healthBar.setName('Player 1'); // Set default name
+    }
     
     // Set initial position
     this._x = spawnX;
@@ -216,7 +224,13 @@ export class Player {
     
     this.health -= damage;
     if (this.health <= 0) {
+      this.health = 0;
       this.die();
+    }
+    
+    // Update health bar
+    if (!this.isAI && this.healthBar) {
+      this.healthBar.update(this.health);
     }
   }
 
@@ -322,6 +336,11 @@ export class Player {
     this.graphics.visible = true;
     this.turret.graphics.visible = true;
     
+    // Update health bar
+    if (!this.isAI && this.healthBar) {
+      this.healthBar.update(this.health);
+    }
+    
     // Clean up any remaining explosion particles
     this.clearExplosionParticles();
     
@@ -335,6 +354,11 @@ export class Player {
     
     // Clean up explosion particles
     this.clearExplosionParticles();
+    
+    // Clean up health bar
+    if (!this.isAI && this.healthBar) {
+      this.healthBar.destroy();
+    }
     
     this.app.stage.removeChild(this.graphics);
     this.turret.graphics.destroy();

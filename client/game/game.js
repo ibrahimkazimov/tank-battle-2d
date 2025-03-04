@@ -17,6 +17,15 @@ export class Game {
     this.logicalWidth = WIDTH;
     this.logicalHeight = HEIGHT;
     
+    // Camera animation properties
+    this.cameraAnimation = null;
+    this.cameraStartX = 0;
+    this.cameraStartY = 0;
+    this.cameraTargetX = 0;
+    this.cameraTargetY = 0;
+    this.cameraAnimationStartTime = 0;
+    this.cameraAnimationDuration = 1000; // 1 second duration
+    
     this.keys = {
       ArrowLeft: false,
       ArrowRight: false,
@@ -70,6 +79,9 @@ export class Game {
       background: BACKGROUND_COLOR,
       resolution: window.devicePixelRatio || 1,
     });
+    
+    // Attach game instance to app for easy access
+    this.app.game = this;
     
     // Make stage interactive and ensure it covers the full canvas
     this.app.stage.eventMode = "static";
@@ -167,6 +179,43 @@ export class Game {
       this.worldContainer.x = -this.player.x;
       this.worldContainer.y = -this.player.y;
     });
+  }
+  
+  animateCameraToPosition(targetX, targetY) {
+    // Clear any existing camera animation
+    if (this.cameraAnimation) {
+      this.app.ticker.remove(this.cameraAnimation);
+    }
+
+    // Store start and target positions
+    this.cameraStartX = this.worldContainer.x;
+    this.cameraStartY = this.worldContainer.y;
+    this.cameraTargetX = -targetX;
+    this.cameraTargetY = -targetY;
+    this.cameraAnimationStartTime = Date.now();
+
+    // Create smooth easing function
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+    // Create animation function
+    this.cameraAnimation = () => {
+      const elapsed = Date.now() - this.cameraAnimationStartTime;
+      const progress = Math.min(elapsed / this.cameraAnimationDuration, 1);
+      const easedProgress = easeOutCubic(progress);
+
+      // Interpolate camera position
+      this.worldContainer.x = this.cameraStartX + (this.cameraTargetX - this.cameraStartX) * easedProgress;
+      this.worldContainer.y = this.cameraStartY + (this.cameraTargetY - this.cameraStartY) * easedProgress;
+
+      // Remove animation when complete
+      if (progress >= 1) {
+        this.app.ticker.remove(this.cameraAnimation);
+        this.cameraAnimation = null;
+      }
+    };
+
+    // Add animation to ticker
+    this.app.ticker.add(this.cameraAnimation);
   }
   
   destroy() {

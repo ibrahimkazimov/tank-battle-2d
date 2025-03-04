@@ -17,6 +17,9 @@ export class Player {
     this.respawnTimer = null;
     this.explosionParticles = [];
     
+    // Store reference to game instance
+    this.game = app.game;
+    
     // Create turret first so it's behind the player
     this.turret = new Turret(app, isAI, worldContainer);
     if (isAI) {
@@ -329,12 +332,8 @@ export class Player {
   respawn() {
     this.isDead = false;
     this.health = PLAYER_MAX_HEALTH;
-    this.x = this.spawnX;
-    this.y = this.spawnY;
     this.velocityX = 0;
     this.velocityY = 0;
-    this.graphics.visible = true;
-    this.turret.graphics.visible = true;
     
     // Update health bar
     if (!this.isAI && this.healthBar) {
@@ -343,8 +342,31 @@ export class Player {
     
     // Clean up any remaining explosion particles
     this.clearExplosionParticles();
-    
     this.explosionParticles = [];
+
+    // For the main player, animate camera to spawn position
+    if (!this.isAI) {
+      // Keep player invisible during camera transition
+      this.graphics.visible = false;
+      this.turret.graphics.visible = false;
+
+      // Animate camera to spawn position
+      this.app.game.animateCameraToPosition(this.spawnX, this.spawnY);
+
+      // Show player after camera animation completes
+      setTimeout(() => {
+        this.x = this.spawnX;
+        this.y = this.spawnY;
+        this.graphics.visible = true;
+        this.turret.graphics.visible = true;
+      }, this.app.game.cameraAnimationDuration);
+    } else {
+      // For AI, just respawn immediately
+      this.x = this.spawnX;
+      this.y = this.spawnY;
+      this.graphics.visible = true;
+      this.turret.graphics.visible = true;
+    }
   }
 
   destroy() {

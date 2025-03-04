@@ -16,3 +16,20 @@ export function checkCollision(rect1, rect2) {
   export function getDistance(x1, y1, x2, y2) {
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
   }
+
+  /**
+   * Checks collision between a circle and a rectangle
+   */
+  export function checkCircleRectCollision(circle, rect) {
+    // Find the closest point on the rectangle to the circle's center
+    const closestX = Math.max(rect.x, Math.min(circle.x, rect.x + rect.width));
+    const closestY = Math.max(rect.y, Math.min(circle.y, rect.y + rect.height));
+    
+    // Calculate the distance between the circle's center and the closest point
+    const distanceX = circle.x - closestX;
+    const distanceY = circle.y - closestY;
+    const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+    
+    // If the distance is less than the circle's radius, there's a collision
+    return distance < circle.radius;
+  }

@@ -1,6 +1,6 @@
 import { PLAYER_RADIUS, PLAYER_COLOR, PLAYER_SPEED, WIDTH, HEIGHT, PLAYER_MAX_HEALTH, RESPAWN_TIME, PLAYER2_COLOR } from '../constants.js';
 import { Turret } from './turret.js';
-import { checkCollision } from '../utils/collision.js';
+import { checkCollision, getDistance, checkCircleRectCollision } from '../utils/collision.js';
 import { HealthBar } from './healthBar.js';
 
 export class Player {
@@ -196,11 +196,11 @@ export class Player {
   }
   
   checkWallCollision(newX, newY) {
-    const playerBounds = {
-      x: WIDTH / 2 - PLAYER_RADIUS,
-      y: HEIGHT / 2 - PLAYER_RADIUS,
-      width: PLAYER_RADIUS * 2,
-      height: PLAYER_RADIUS * 2,
+    // Create circle object for the player
+    const playerCircle = {
+      x: WIDTH / 2,
+      y: HEIGHT / 2,
+      radius: PLAYER_RADIUS
     };
 
     // Adjust for world position
@@ -215,7 +215,7 @@ export class Player {
         height: wall.graphics.height
       };
 
-      if (checkCollision(playerBounds, adjustedWall)) {
+      if (checkCircleRectCollision(playerCircle, adjustedWall)) {
         return true;
       }
     }

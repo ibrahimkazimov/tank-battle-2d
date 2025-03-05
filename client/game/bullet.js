@@ -11,6 +11,9 @@ export class BulletManager {
     // All bullets now go in the world container
     this.aiBulletContainer = new PIXI.Container();
     this.worldContainer.addChild(this.aiBulletContainer);
+    
+    // Add a ticker to update bullet collisions
+    this.app.ticker.add(this.updateBulletCollisions.bind(this));
   }
   
   createBullet(x, y, rotation, sourcePlayer) {
@@ -22,6 +25,9 @@ export class BulletManager {
     bullet.context.circle(0, 0, BULLET_RADIUS);
     bullet.context.fill();
     
+    // Add health to the bullet for collision detection
+    bullet.health = 1;
+
     // Calculate the bullet's starting position in world coordinates
     let worldX, worldY;
     if (sourcePlayer.isAI) {
@@ -159,6 +165,29 @@ export class BulletManager {
       }
     }
     return false;
+  }
+
+  // Update bullet collisions
+  updateBulletCollisions() {
+    for (let i = 0; i < this.bullets.length; i++) {
+      const bulletA = this.bullets[i];
+      for (let j = i + 1; j < this.bullets.length; j++) {
+        const bulletB = this.bullets[j];
+        const distance = getDistance(bulletA.x, bulletA.y, bulletB.x, bulletB.y);
+        if (distance < BULLET_RADIUS * 2) {
+          bulletA.health -= 1;
+          bulletB.health -= 1;
+        }
+      }
+    }
+    // Filter out bullets with health <= 0
+    this.bullets = this.bullets.filter(bullet => {
+      if (bullet.health <= 0) {
+        this.destroyBullet(bullet);
+        return false;
+      }
+      return true;
+    });
   }
 
   destroyBullet(bullet) {

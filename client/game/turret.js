@@ -8,6 +8,7 @@ export class Turret {
     this.recoilAnimation = null;
     this.recoilDistance = 3; // Reduced recoil distance
     this.recoilDuration = 100; // Longer duration for smoother animation
+    this.playerPushBackDistance = 0.5; // Very slight push back for the player
     this.animationStartTime = 0;
     this.startX = 0;
     this.startY = 0;
@@ -94,6 +95,18 @@ export class Turret {
       // For main player, use screen center coordinates
       this.targetX = WIDTH/2 + recoilX;
       this.targetY = HEIGHT/2 + recoilY;
+    }
+
+    // Apply slight push back to the player
+    if (this.app.game) {
+      const pushBackX = -Math.cos(this.rotation) * this.playerPushBackDistance;
+      const pushBackY = -Math.sin(this.rotation) * this.playerPushBackDistance;
+      
+      if (this.isAI && this.app.game.player2) {
+        this.app.game.player2.applyForce(pushBackX, pushBackY);
+      } else if (!this.isAI && this.app.game.player) {
+        this.app.game.player.applyForce(pushBackX, pushBackY);
+      }
     }
 
     // Start animation

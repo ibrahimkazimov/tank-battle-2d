@@ -2,19 +2,22 @@ import { TURRET_WIDTH, TURRET_HEIGHT, TURRET_COLOR, WIDTH, HEIGHT } from '../con
 
 export class Turret {
   constructor(app, isAI = false, worldContainer = null) {
-    this.app = app;
-    this.isAI = isAI;
+    this.app = app; // Reference to the main app
+    this.isAI = isAI; // Whether the turret belongs to an AI
     this.graphics = this.createGraphics();
-    this.recoilAnimation = null;
+    this.recoilAnimation = null; // Recoil animation timeout
     this.recoilDistance = 3; // Reduced recoil distance
     this.recoilDuration = 100; // Longer duration for smoother animation
     this.playerPushBackDistance = 0.5; // Very slight push back for the player
-    this.animationStartTime = 0;
-    this.startX = 0;
-    this.startY = 0;
-    this.targetX = 0;
-    this.targetY = 0;
+    this.animationStartTime = 0; // Recoil animation start time
+    this.startX = 0; // Recoil start position
+    this.startY = 0; // Recoil start position
+    this.targetX = 0; // Recoil target position
+    this.targetY = 0; // Recoil target position
+    this.lastFired = 0; // Last time the turret fired
+    this.bulletCooldown = 500; // cooldown in milliseconds
     
+    // Add turret to world container if it's an AI turret
     if (isAI && worldContainer) {
       worldContainer.addChild(this.graphics);
     } else {
@@ -74,6 +77,10 @@ export class Turret {
 
   // Add recoil animation when firing
   fire() {
+    const now = Date.now();
+    if (now - this.lastFired < this.bulletCooldown) return false;
+    this.lastFired = now;
+
     if (this.recoilAnimation) {
       clearTimeout(this.recoilAnimation);
       this.app.ticker.remove(this.animateRecoil);
@@ -124,6 +131,8 @@ export class Turret {
         this.graphics.y = HEIGHT/2;
       }
     }, this.recoilDuration);
+
+    return true;
   }
 
   // Animation ticker function

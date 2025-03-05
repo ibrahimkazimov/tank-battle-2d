@@ -7,6 +7,7 @@ export const TURRET_WIDTH = 10;
 export const TURRET_HEIGHT = 30;
 export const BULLET_RADIUS = 5;
 export const BULLET_SPEED = 0.5;
+export const BULLET_COOLDOWN = 500; // 0.5 seconds in milliseconds
 
 // Colors
 export const BULLET_COLOR = "#FF0000";

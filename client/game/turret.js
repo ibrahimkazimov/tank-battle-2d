@@ -1,4 +1,4 @@
-import { TURRET_WIDTH, TURRET_HEIGHT, TURRET_COLOR, WIDTH, HEIGHT } from '../constants.js';
+import { TURRET_WIDTH, TURRET_HEIGHT, TURRET_COLOR, WIDTH, HEIGHT, BULLET_COOLDOWN } from '../constants.js';
 
 export class Turret {
   constructor(app, isAI = false, worldContainer = null) {
@@ -15,7 +15,7 @@ export class Turret {
     this.targetX = 0; // Recoil target position
     this.targetY = 0; // Recoil target position
     this.lastFired = 0; // Last time the turret fired
-    this.bulletCooldown = 500; // cooldown in milliseconds
+  
     
     // Add turret to world container if it's an AI turret
     if (isAI && worldContainer) {
@@ -78,7 +78,7 @@ export class Turret {
   // Add recoil animation when firing
   fire() {
     const now = Date.now();
-    if (now - this.lastFired < this.bulletCooldown) return false;
+    if (now - this.lastFired < BULLET_COOLDOWN) return false;
     this.lastFired = now;
 
     if (this.recoilAnimation) {

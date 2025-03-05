@@ -2,11 +2,11 @@
 export const WIDTH = 1000; // Assuming this value based on code context
 export const HEIGHT = 800; // Assuming this value based on code context
 export const PLAYER_RADIUS = 20;
-export const PLAYER_SPEED = 1;
+export const PLAYER_SPEED = 0.5;
 export const TURRET_WIDTH = 10;
 export const TURRET_HEIGHT = 30;
 export const BULLET_RADIUS = 5;
-export const BULLET_SPEED = 0.5;
+export const BULLET_SPEED = 1.5;
 export const BULLET_COOLDOWN = 500; // 0.5 seconds in milliseconds
 
 // Colors

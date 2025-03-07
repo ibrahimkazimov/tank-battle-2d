@@ -1,6 +1,12 @@
 // This file contains all game constants
-export const WIDTH = 1000; // Assuming this value based on code context
-export const HEIGHT = 800; // Assuming this value based on code context
+export const WIDTH = 1920;  // Standard 16:9 aspect ratio
+export const HEIGHT = 1080;
+
+// View distance (how far players can see)
+export const VIEW_DISTANCE = 1200;  // Increased for better map visibility
+export const MIN_ZOOM = 1.0;  // Keep minimum zoom to maintain good game view
+export const MAX_ZOOM = 2.0;  // Maximum zoom level
+
 export const PLAYER_RADIUS = 20;
 export const PLAYER_SPEED = 0.5;
 export const TURRET_WIDTH = 10;

@@ -3,7 +3,7 @@ import { WallManager } from './wall.js';
 import { Flag } from './flag.js';
 import { BulletManager } from './bullet.js';
 import { NetworkManager } from '../network/networkManager.js';
-import { WIDTH, HEIGHT, BACKGROUND_COLOR, PLAYER2_SHOOT_INTERVAL } from '../constants.js';
+import { WIDTH, HEIGHT, BACKGROUND_COLOR, PLAYER2_SHOOT_INTERVAL, VIEW_DISTANCE, MIN_ZOOM, MAX_ZOOM } from '../constants.js';
 
 export class Game {
   constructor() {
@@ -55,10 +55,17 @@ export class Game {
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
     
-    // Calculate scale based on the smaller ratio to maintain aspect ratio
+    // Calculate base scale based on the smaller ratio to maintain aspect ratio
     const scaleX = windowWidth / this.logicalWidth;
     const scaleY = windowHeight / this.logicalHeight;
-    this.gameScale = Math.min(scaleX, scaleY);
+    let baseScale = Math.min(scaleX, scaleY);
+    
+    // Calculate the view scale based on VIEW_DISTANCE
+    // Reduced multiplier from 1.5 to 1.2 to show more of the map
+    const viewScale = (VIEW_DISTANCE * 2 * 1.2) / Math.min(windowWidth, windowHeight);
+    
+    // Combine scales and clamp between MIN_ZOOM and MAX_ZOOM
+    this.gameScale = Math.min(Math.max(baseScale / viewScale, MIN_ZOOM), MAX_ZOOM);
     
     // Update the renderer size
     this.app.renderer.resize(windowWidth, windowHeight);
@@ -69,6 +76,33 @@ export class Game {
     this.app.stage.scale.set(this.gameScale);
     this.app.stage.position.x = (windowWidth - scaledWidth) / 2;
     this.app.stage.position.y = (windowHeight - scaledHeight) / 2;
+    
+    // Update the view mask if it exists
+    this.updateViewMask();
+  }
+  
+  updateViewMask() {
+    // Remove existing mask if any
+    if (this.viewMask) {
+      this.worldContainer.mask = null;
+      this.viewMask.destroy();
+    }
+    
+    // Create circular mask for view distance
+    this.viewMask = new PIXI.Graphics();
+    this.viewMask.context.fillStyle = '#000000';
+    this.viewMask.context.circle(0, 0, VIEW_DISTANCE);
+    this.viewMask.context.fill();
+    
+    // Position mask at player
+    if (this.player) {
+      this.viewMask.x = this.player.x;
+      this.viewMask.y = this.player.y;
+    }
+    
+    // Add mask to world container
+    this.worldContainer.addChild(this.viewMask);
+    this.worldContainer.mask = this.viewMask;
   }
   
   async init() {
@@ -109,6 +143,9 @@ export class Game {
     
     // Initialize bullet manager
     this.bulletManager = new BulletManager(this.app, this.wallManager, this.worldContainer);
+    
+    // Create view mask
+    this.updateViewMask();
     
     // Setup event listeners
     this.setupEventListeners();
@@ -188,7 +225,7 @@ export class Game {
           right: this.keys.ArrowRight || this.keys.d,
           up: this.keys.ArrowUp || this.keys.w,
           down: this.keys.ArrowDown || this.keys.s,
-          rotation: this.player.rotation // Send current rotation
+          rotation: this.player.rotation
         });
         
         // Update world container position to keep player centered
@@ -198,6 +235,12 @@ export class Game {
         // Calculate the world container position that will center the player
         this.worldContainer.x = screenCenterX - (this.player.x * this.gameScale) - this.app.stage.position.x;
         this.worldContainer.y = screenCenterY - (this.player.y * this.gameScale) - this.app.stage.position.y;
+        
+        // Update view mask position
+        if (this.viewMask) {
+          this.viewMask.x = this.player.x;
+          this.viewMask.y = this.player.y;
+        }
       }
       
       // Update other players' positions with interpolation

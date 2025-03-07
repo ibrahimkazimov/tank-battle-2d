@@ -175,8 +175,8 @@ const physics = {
     
     // Check player collisions
     for (const [playerId, player] of gameState.players) {
-      // Skip if this is the bullet's source player and they're dead
-      if (playerId === bullet.sourceId && player.isDead) {
+      // Skip if this is the bullet's source player or if player is dead
+      if (playerId === bullet.sourceId || player.isDead) {
         continue;
       }
       
@@ -185,11 +185,6 @@ const physics = {
       const distance = Math.sqrt(dx * dx + dy * dy);
       
       if (distance < GAME_CONSTANTS.PLAYER_RADIUS + bulletRadius) {
-        // If this is the bullet's source player, just return true to destroy the bullet
-        if (playerId === bullet.sourceId) {
-          return true;
-        }
-        
         // Player hit by bullet (not the source)
         player.health -= GAME_CONSTANTS.BULLET_DAMAGE;
         if (player.health <= 0) {

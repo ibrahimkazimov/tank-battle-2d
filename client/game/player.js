@@ -4,7 +4,7 @@ import { checkCollision, getDistance, checkCircleRectCollision } from '../utils/
 import { HealthBar } from './healthBar.js';
 
 export class Player {
-  constructor(app, wallManager, isAI = false, spawnX = 0, spawnY = 0, worldContainer = null) {
+  constructor(app, wallManager, isAI = false, spawnX = 0, spawnY = 0, worldContainer = null, color = '#4287f5') {
     this.app = app;
     this.wallManager = wallManager;
     this.radius = PLAYER_RADIUS;
@@ -16,16 +16,13 @@ export class Player {
     this.isDead = false;
     this.respawnTimer = null;
     this.explosionParticles = [];
+    this.color = color;
     
     // Store reference to game instance
     this.game = app.game;
     
     // Create turret first so it's behind the player
-    this.turret = new Turret(app, isAI, worldContainer);
-    if (isAI) {
-      this.turret.graphics.x = spawnX;
-      this.turret.graphics.y = spawnY;
-    }
+    this.turret = new Turret(app, isAI, worldContainer, color);
     
     this.graphics = this.createGraphics();
     
@@ -33,7 +30,7 @@ export class Player {
     if (!isAI) {
       this.healthBar = new HealthBar(app);
       this.healthBar.update(this.health);
-      this.healthBar.setName('Player 1'); // Set default name
+      this.healthBar.setName('Player 1');
     }
     
     // Set initial position
@@ -43,29 +40,50 @@ export class Player {
     // Add velocity properties
     this.velocityX = 0;
     this.velocityY = 0;
-    this.acceleration = 0.5;  // Acceleration when moving
-    this.friction = 0.95;     // Friction to slow down when not moving (value between 0 and 1)
-    this.maxSpeed = PLAYER_SPEED * 2;  // Maximum speed the tank can reach
+    this.acceleration = 0.5;
+    this.friction = 0.95;
+    this.maxSpeed = PLAYER_SPEED * 2;
+    
+    // Network interpolation properties
+    this.targetX = spawnX;
+    this.targetY = spawnY;
+    this.targetRotation = 0;
+    
+    // Set initial rotation
+    this.rotation = 0;
+    this.turret.rotation = 0;
   }
   
   createGraphics() {
     const player = new PIXI.Graphics();
-    player.context.fillStyle = this.isAI ? PLAYER2_COLOR : PLAYER_COLOR;
+    player.context.fillStyle = this.color;
     player.context.circle(0, 0, PLAYER_RADIUS);
     player.context.fill();
     
-    // For AI, position in world coordinates. For player, keep centered
-    if (this.isAI) {
-      player.x = this.spawnX;
-      player.y = this.spawnY;
+    // Add to world container if it exists, otherwise add to app stage
+    if (this.worldContainer) {
       this.worldContainer.addChild(player);
     } else {
-      // Center player in logical coordinates
-      player.x = WIDTH / 2;
-      player.y = HEIGHT / 2;
       this.app.stage.addChild(player);
     }
+    
+    // Set initial position
+    player.x = this.spawnX;
+    player.y = this.spawnY;
+    
     return player;
+  }
+  
+  get rotation() {
+    return this._rotation || 0;
+  }
+  
+  set rotation(value) {
+    this._rotation = value;
+    if (this.turret) {
+      this.turret.graphics.rotation = value;
+      this.graphics.rotation = value;
+    }
   }
   
   get x() {
@@ -74,16 +92,11 @@ export class Player {
   
   set x(value) {
     this._x = value;
-    if (!this.isAI) {
-      // Keep player centered in logical coordinates
-      this.graphics.x = WIDTH / 2;
-      // Only set turret x if it's not in recoil animation
-      if (!this.turret.recoilAnimation) {
-        this.turret.x = WIDTH / 2;
-      }
-    } else {
+    if (this.graphics && this.graphics.parent) {
       this.graphics.x = value;
-      this.turret.graphics.x = value;
+      if (this.turret && this.turret.graphics && this.turret.graphics.parent) {
+        this.turret.graphics.x = value;
+      }
     }
   }
   
@@ -93,16 +106,11 @@ export class Player {
   
   set y(value) {
     this._y = value;
-    if (!this.isAI) {
-      // Keep player centered in logical coordinates
-      this.graphics.y = HEIGHT / 2;
-      // Only set turret y if it's not in recoil animation
-      if (!this.turret.recoilAnimation) {
-        this.turret.y = HEIGHT / 2;
-      }
-    } else {
+    if (this.graphics && this.graphics.parent) {
       this.graphics.y = value;
-      this.turret.graphics.y = value;
+      if (this.turret && this.turret.graphics && this.turret.graphics.parent) {
+        this.turret.graphics.y = value;
+      }
     }
   }
   
@@ -134,7 +142,7 @@ export class Player {
       this.velocityY *= scale;
     }
     
-    // Calculate new position
+    // Calculate new position in world coordinates
     const newX = this.x + this.velocityX;
     const newY = this.y + this.velocityY;
     
@@ -163,22 +171,199 @@ export class Player {
   }
   
   updateTurretRotation(mouseX, mouseY) {
-    if (!this.isAI) {
-      // Calculate angle between player center and mouse position in logical coordinates
-      const dx = mouseX - WIDTH / 2;
-      const dy = mouseY - HEIGHT / 2;
-      this.turret.rotation = Math.atan2(dy, dx);
+    if (this.isDead) return;
+    
+    // Calculate angle between player and mouse in world coordinates
+    const dx = mouseX - this.x;
+    const dy = mouseY - this.y;
+    
+    // Calculate the angle
+    let angle = Math.atan2(dy, dx);
+    
+    // Normalize the angle to be between 0 and 2π
+    if (angle < 0) {
+      angle += 2 * Math.PI;
     }
+    
+    // Update both player and turret rotation directly without interpolation
+    this._rotation = angle;
+    this.graphics.rotation = angle;
+    this.turret.graphics.rotation = angle;
   }
   
   getTurretPosition() {
+    const turretLength = 30;
+    // Use the actual player position for bullet spawn
     return {
-      x: this.x,
-      y: this.y,
-      rotation: this.turret.rotation
+      x: this.graphics.x + Math.cos(this.rotation) * turretLength,
+      y: this.graphics.y + Math.sin(this.rotation) * turretLength,
+      rotation: this.rotation
     };
   }
   
+  takeDamage(amount) {
+    if (this.isDead) return;
+    
+    this.health -= amount;
+    
+    // Update health bar for main player
+    if (!this.isAI && this.healthBar) {
+      this.healthBar.update(this.health);
+    }
+    
+    if (this.health <= 0) {
+      this.die();
+    }
+  }
+  
+  die() {
+    this.isDead = true;
+    this.health = 0;
+    this.velocityX = 0;
+    this.velocityY = 0;
+    
+    // Hide player and turret graphics
+    this.graphics.visible = false;
+    this.turret.graphics.visible = false;
+    
+    // Create explosion effect
+    this.createExplosion();
+    
+    // Start respawn timer
+    this.respawnTimer = setTimeout(() => this.respawn(), RESPAWN_TIME);
+  }
+  
+  respawn() {
+    // Notify server about respawn
+    if (!this.isAI) {
+      this.app.game.networkManager.sendRespawn();
+    }
+    
+    this.isDead = false;
+    this.health = PLAYER_MAX_HEALTH;
+    this.velocityX = 0;
+    this.velocityY = 0;
+    
+    // Reset rotation to initial state
+    this._rotation = 0;
+    
+    // Update health bar
+    if (!this.isAI && this.healthBar) {
+      this.healthBar.update(this.health);
+    }
+    
+    // Clean up any remaining explosion particles
+    this.clearExplosionParticles();
+    this.explosionParticles = [];
+
+    // For the main player, animate camera to spawn position
+    if (!this.isAI) {
+      this.app.game.animateCameraToPosition(this.spawnX, this.spawnY);
+
+      setTimeout(() => {
+        this.x = this.spawnX;
+        this.y = this.spawnY;
+        this.graphics.visible = true;
+        this.turret.graphics.visible = true;
+        
+        // Reset graphics rotation
+        this.graphics.rotation = this._rotation;
+        this.turret.graphics.rotation = this._rotation;
+        
+        // Ensure turret is properly positioned
+        this.turret.graphics.x = this.graphics.x;
+        this.turret.graphics.y = this.graphics.y;
+        
+        // Reset target positions
+        this.targetX = this.spawnX;
+        this.targetY = this.spawnY;
+        this.targetRotation = this._rotation;
+      }, this.app.game.cameraAnimationDuration);
+    } else {
+      this.x = this.spawnX;
+      this.y = this.spawnY;
+      this.graphics.visible = true;
+      this.turret.graphics.visible = true;
+      
+      // Reset graphics rotation
+      this.graphics.rotation = this._rotation;
+      this.turret.graphics.rotation = this._rotation;
+      
+      // Ensure turret is properly positioned
+      this.turret.graphics.x = this.graphics.x;
+      this.turret.graphics.y = this.graphics.y;
+      
+      // Reset target positions
+      this.targetX = this.spawnX;
+      this.targetY = this.spawnY;
+      this.targetRotation = this._rotation;
+    }
+  }
+  
+  applyForce(forceX, forceY) {
+    if (this.isDead) return;
+    
+    this.velocityX += forceX;
+    this.velocityY += forceY;
+    
+    const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
+    if (speed > this.maxSpeed) {
+      const scale = this.maxSpeed / speed;
+      this.velocityX *= scale;
+      this.velocityY *= scale;
+    }
+  }
+  
+  destroy() {
+    if (this.respawnTimer) {
+      clearTimeout(this.respawnTimer);
+    }
+    this.clearExplosionParticles();
+    if (this.healthBar) {
+      this.healthBar.destroy();
+    }
+    this.graphics.destroy();
+    this.turret.destroy();
+  }
+  
+  checkWallCollision(newX, newY) {
+    // Create circle object for the player in world coordinates
+    const playerCircle = {
+      x: newX,
+      y: newY,
+      radius: PLAYER_RADIUS
+    };
+
+    for (const wall of this.wallManager.getWalls()) {
+      const wallRect = {
+        x: wall.graphics.x,
+        y: wall.graphics.y,
+        width: wall.graphics.width,
+        height: wall.graphics.height
+      };
+
+      if (checkCircleRectCollision(playerCircle, wallRect)) {
+        // Calculate wall normal (perpendicular to wall surface)
+        const isVerticalWall = wallRect.width < wallRect.height;
+        const normalX = isVerticalWall ? 1 : 0;
+        const normalY = isVerticalWall ? 0 : 1;
+
+        // Calculate dot product of velocity and normal
+        const dotProduct = this.velocityX * normalX + this.velocityY * normalY;
+
+        // If moving towards the wall
+        if (dotProduct < 0) {
+          // Project velocity onto the wall plane
+          this.velocityX = this.velocityX - dotProduct * normalX;
+          this.velocityY = this.velocityY - dotProduct * normalY;
+        }
+
+        return true;
+      }
+    }
+    return false;
+  }
+
   enforceWorldBoundaries() {
     const WORLD_BOUNDS = {
       left: -WIDTH,
@@ -204,92 +389,16 @@ export class Player {
       this.velocityY = 0;  // Stop vertical movement at boundary
     }
   }
-  
-  checkWallCollision(newX, newY) {
-    // Create circle object for the player
-    const playerCircle = {
-      x: WIDTH / 2,
-      y: HEIGHT / 2,
-      radius: PLAYER_RADIUS
-    };
-
-    // Adjust for world position
-    const worldX = -newX;
-    const worldY = -newY;
-
-    for (const wall of this.wallManager.getWalls()) {
-      const adjustedWall = {
-        x: wall.graphics.x + worldX,
-        y: wall.graphics.y + worldY,
-        width: wall.graphics.width,
-        height: wall.graphics.height
-      };
-
-      if (checkCircleRectCollision(playerCircle, adjustedWall)) {
-        // Calculate wall normal (perpendicular to wall surface)
-        const isVerticalWall = adjustedWall.width < adjustedWall.height;
-        const normalX = isVerticalWall ? 1 : 0;
-        const normalY = isVerticalWall ? 0 : 1;
-
-        // Calculate dot product of velocity and normal
-        const dotProduct = this.velocityX * normalX + this.velocityY * normalY;
-
-        // If moving towards the wall
-        if (dotProduct < 0) {
-          // Project velocity onto the wall plane
-          this.velocityX = this.velocityX - dotProduct * normalX;
-          this.velocityY = this.velocityY - dotProduct * normalY;
-        }
-
-        return true;
-      }
-    }
-    return false;
-  }
-
-  takeDamage(damage) {
-    if (this.isDead) return;
-    
-    this.health -= damage;
-    if (this.health <= 0) {
-      this.health = 0;
-      this.die();
-    }
-    
-    // Update health bar
-    if (!this.isAI && this.healthBar) {
-      this.healthBar.update(this.health);
-    }
-  }
-
-  applyForce(forceX, forceY) {
-    if (this.isDead) return;
-    
-    // Add force to current velocity
-    if (this.isAI) {
-      // For AI, apply force in world coordinates
-      this.velocityX += forceX;
-      this.velocityY += forceY;
-    } else {
-      // For player, apply force in screen coordinates
-      this.velocityX += forceX;
-      this.velocityY += forceY;
-    }
-    
-    // Limit speed after force application
-    const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
-    if (speed > this.maxSpeed) {
-      const scale = this.maxSpeed / speed;
-      this.velocityX *= scale;
-      this.velocityY *= scale;
-    }
-  }
 
   createExplosion() {
     const numParticles = 16;
     const particleSpeed = 3;
     const particleSize = 4;
-    const particleColor = this.isAI ? PLAYER2_COLOR : PLAYER_COLOR;
+    const particleColor = this.color;
+    
+    // Use the actual player position for the explosion
+    const explosionX = this.x;
+    const explosionY = this.y;
     
     for (let i = 0; i < numParticles; i++) {
       const angle = (i / numParticles) * Math.PI * 2;
@@ -300,18 +409,12 @@ export class Player {
       particle.context.circle(0, 0, particleSize);
       particle.context.fill();
       
-      // Position particle at player center
-      if (this.isAI) {
-        particle.x = this.x;
-        particle.y = this.y;
-      } else {
-        // For main player, use screen center coordinates
-        particle.x = WIDTH / 2;
-        particle.y = HEIGHT / 2;
-      }
+      // Position particle at player center using world coordinates
+      particle.x = explosionX;
+      particle.y = explosionY;
       
-      // Add to appropriate container
-      if (this.isAI && this.worldContainer) {
+      // Add to world container for consistent coordinate system
+      if (this.worldContainer) {
         this.worldContainer.addChild(particle);
       } else {
         this.app.stage.addChild(particle);
@@ -325,7 +428,7 @@ export class Player {
       const fadeOut = () => {
         particle.alpha -= 0.03;
         if (particle.alpha <= 0) {
-          if (this.isAI && this.worldContainer) {
+          if (this.worldContainer) {
             this.worldContainer.removeChild(particle);
           } else {
             this.app.stage.removeChild(particle);
@@ -349,88 +452,13 @@ export class Player {
     }
   }
 
-  die() {
-    this.isDead = true;
-    this.health = 0;
-    
-    // Create explosion effect
-    this.createExplosion();
-    
-    // Hide player and turret
-    this.graphics.visible = false;
-    this.turret.graphics.visible = false;
-
-    // Start respawn timer
-    this.respawnTimer = setTimeout(() => {
-      this.respawn();
-    }, RESPAWN_TIME);
-  }
-
-
   clearExplosionParticles() {
     for (const particle of this.explosionParticles) {
-      if (this.isAI && this.worldContainer) {
+      if (this.worldContainer) {
         this.worldContainer.removeChild(particle);
       } else {
         this.app.stage.removeChild(particle);
       }
     }
-  }
-
-  respawn() {
-    this.isDead = false;
-    this.health = PLAYER_MAX_HEALTH;
-    this.velocityX = 0;
-    this.velocityY = 0;
-    
-    // Update health bar
-    if (!this.isAI && this.healthBar) {
-      this.healthBar.update(this.health);
-    }
-    
-    // Clean up any remaining explosion particles
-    this.clearExplosionParticles();
-    this.explosionParticles = [];
-
-    // For the main player, animate camera to spawn position
-    if (!this.isAI) {
-      // Keep player invisible during camera transition
-      this.graphics.visible = false;
-      this.turret.graphics.visible = false;
-
-      // Animate camera to spawn position
-      this.app.game.animateCameraToPosition(this.spawnX, this.spawnY);
-
-      // Show player after camera animation completes
-      setTimeout(() => {
-        this.x = this.spawnX;
-        this.y = this.spawnY;
-        this.graphics.visible = true;
-        this.turret.graphics.visible = true;
-      }, this.app.game.cameraAnimationDuration);
-    } else {
-      // For AI, just respawn immediately
-      this.x = this.spawnX;
-      this.y = this.spawnY;
-      this.graphics.visible = true;
-      this.turret.graphics.visible = true;
-    }
-  }
-
-  destroy() {
-    if (this.respawnTimer) {
-      clearTimeout(this.respawnTimer);
-    }
-    
-    // Clean up explosion particles
-    this.clearExplosionParticles();
-    
-    // Clean up health bar
-    if (!this.isAI && this.healthBar) {
-      this.healthBar.destroy();
-    }
-    
-    this.app.stage.removeChild(this.graphics);
-    this.turret.graphics.destroy();
   }
 }

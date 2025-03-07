@@ -43,18 +43,16 @@ export class WallManager {
   // Generate some example walls
   createDefaultWalls() {
     // Create walls to form a bounded area
-    // Left wall
-    this.createWall(-100, -100, 20, 1000);
-    // Right wall
-    this.createWall(1100, -100, 20, 1000);
-    // Top wall
-    this.createWall(-100, -100, 1220, 20);
-    // Bottom wall
-    this.createWall(-100, 900, 1220, 20);
+    // Outer walls
+    this.createWall(-1000, -1000, 2000, 20);  // Top
+    this.createWall(-1000, 980, 2000, 20);    // Bottom
+    this.createWall(-1000, -1000, 20, 2000);  // Left
+    this.createWall(980, -1000, 20, 2000);    // Right
     
-    // Add some obstacles
-    this.createWall(200, 100, 20, 200);  // Vertical wall
-    this.createWall(500, 500, 200, 20);  // Horizontal wall
-    this.createWall(800, 200, 20, 300);  // Another vertical wall
+    // Inner walls
+    this.createWall(-500, -500, 100, 20);     // Horizontal
+    this.createWall(-500, -500, 20, 100);     // Vertical
+    this.createWall(400, 400, 100, 20);       // Horizontal
+    this.createWall(400, 400, 20, 100);       // Vertical
   }
 }

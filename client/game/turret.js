@@ -1,10 +1,29 @@
-import { TURRET_WIDTH, TURRET_HEIGHT, TURRET_COLOR, WIDTH, HEIGHT, BULLET_COOLDOWN } from '../constants.js';
+import { TURRET_WIDTH, TURRET_HEIGHT, TURRET_COLOR, WIDTH, HEIGHT, BULLET_COOLDOWN, PLAYER_COLOR, PLAYER2_COLOR } from '../constants.js';
 
 export class Turret {
   constructor(app, isAI = false, worldContainer = null) {
     this.app = app; // Reference to the main app
     this.isAI = isAI; // Whether the turret belongs to an AI
-    this.graphics = this.createGraphics();
+    this.worldContainer = worldContainer;
+    this.length = 30;
+    this.width = 8;
+    
+    this.graphics = new PIXI.Graphics();
+    this.graphics.context.fillStyle = isAI ? PLAYER2_COLOR : PLAYER_COLOR;
+    this.graphics.context.rect(0, -this.width/2, this.length, this.width);
+    this.graphics.context.fill();
+    
+    // Add to world container if it exists, otherwise add to app stage
+    if (this.worldContainer) {
+      this.worldContainer.addChild(this.graphics);
+    } else {
+      this.app.stage.addChild(this.graphics);
+    }
+    
+    // Set initial position
+    this.graphics.x = 0;
+    this.graphics.y = 0;
+    
     this.recoilAnimation = null; // Recoil animation timeout
     this.recoilDistance = 3; // Reduced recoil distance
     this.recoilDuration = 100; // Longer duration for smoother animation
@@ -15,33 +34,6 @@ export class Turret {
     this.targetX = 0; // Recoil target position
     this.targetY = 0; // Recoil target position
     this.lastFired = 0; // Last time the turret fired
-  
-    
-    // Add turret to world container if it's an AI turret
-    if (isAI && worldContainer) {
-      worldContainer.addChild(this.graphics);
-    } else {
-      app.stage.addChild(this.graphics);
-    }
-  }
-  
-  createGraphics() {
-    const turret = new PIXI.Graphics();
-    // Draw turret from (0,0) so rotation works correctly
-    turret.context.rect(0, -TURRET_WIDTH / 2, TURRET_HEIGHT, TURRET_WIDTH);
-    turret.context.fillStyle = TURRET_COLOR;
-    turret.context.fill();
-    // Set the pivot point to the base of the turret
-    turret.pivot.x = 0;
-    turret.pivot.y = 0;
-    
-    // Position turret at center for player, will be repositioned for AI
-    if (!this.isAI) {
-      turret.x = WIDTH / 2;
-      turret.y = HEIGHT / 2;
-    }
-    
-    return turret;
   }
   
   get x() {
@@ -69,70 +61,73 @@ export class Turret {
   }
   
   updateRotation(mouseX, mouseY, playerX, playerY) {
-    // Calculate angle between player center and mouse position
-    const dx = mouseX - playerX - WIDTH / 2;
-    const dy = mouseY - playerY - HEIGHT / 2;
-    this.rotation = Math.atan2(dy, dx);
+    // Calculate angle between player center and mouse position in world coordinates
+    const dx = mouseX - playerX;
+    const dy = mouseY - playerY;
+    
+    // Calculate the angle
+    let angle = Math.atan2(dy, dx);
+    
+    // Normalize the angle to be between 0 and 2π
+    if (angle < 0) {
+      angle += 2 * Math.PI;
+    }
+    
+    // Update rotation directly
+    this.graphics.rotation = angle;
   }
 
   // Add recoil animation when firing
   fire() {
-    const now = Date.now();
-    if (now - this.lastFired < BULLET_COOLDOWN) return false;
-    this.lastFired = now;
-
-    if (this.recoilAnimation) {
-      clearTimeout(this.recoilAnimation);
-      this.app.ticker.remove(this.animateRecoil);
-    }
-
-    // Store current position
+    // Store current position for recoil animation
     this.startX = this.graphics.x;
     this.startY = this.graphics.y;
     
     // Calculate recoil direction based on turret rotation
-    const recoilX = -Math.cos(this.rotation) * this.recoilDistance;
-    const recoilY = -Math.sin(this.rotation) * this.recoilDistance;
+    const recoilDistance = 5;
+    const recoilX = -Math.cos(this.rotation) * recoilDistance;
+    const recoilY = -Math.sin(this.rotation) * recoilDistance;
     
-    if (this.isAI) {
-      // For AI, move in world coordinates
-      this.targetX = this.startX + recoilX;
-      this.targetY = this.startY + recoilY;
-    } else {
-      // For main player, use screen center coordinates
-      this.targetX = WIDTH/2 + recoilX;
-      this.targetY = HEIGHT/2 + recoilY;
-    }
-
-    // Apply slight push back to the player
-    if (this.app.game) {
-      const pushBackX = -Math.cos(this.rotation) * this.playerPushBackDistance;
-      const pushBackY = -Math.sin(this.rotation) * this.playerPushBackDistance;
+    // Calculate target position for recoil animation
+    const targetX = this.startX + recoilX;
+    const targetY = this.startY + recoilY;
+    
+    // Get the player's current position
+    const player = this.player;
+    if (!player) return;
+    
+    // Calculate bullet spawn position using player's graphics position
+    const turretLength = 30;
+    const bulletX = player.graphics.x + Math.cos(this.rotation) * turretLength;
+    const bulletY = player.graphics.y + Math.sin(this.rotation) * turretLength;
+    
+    // Create bullet at the correct position
+    this.game.bulletManager.createBullet(bulletX, bulletY, this.rotation, player);
+    
+    // Start recoil animation
+    const recoilDuration = 100; // ms
+    const startTime = Date.now();
+    
+    const animateRecoil = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / recoilDuration, 1);
       
-      if (this.isAI && this.app.game.player2) {
-        this.app.game.player2.applyForce(pushBackX, pushBackY);
-      } else if (!this.isAI && this.app.game.player) {
-        this.app.game.player.applyForce(pushBackX, pushBackY);
-      }
-    }
-
-    // Start animation
-    this.animationStartTime = Date.now();
-    this.app.ticker.add(this.animateRecoil);
-
-    // Set timeout to remove animation
-    this.recoilAnimation = setTimeout(() => {
-      this.app.ticker.remove(this.animateRecoil);
-      if (this.isAI) {
+      // Ease out cubic function for smooth recoil
+      const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+      
+      this.graphics.x = this.startX + (targetX - this.startX) * easeOutCubic;
+      this.graphics.y = this.startY + (targetY - this.startY) * easeOutCubic;
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateRecoil);
+      } else {
+        // Reset position after recoil
         this.graphics.x = this.startX;
         this.graphics.y = this.startY;
-      } else {
-        this.graphics.x = WIDTH/2;
-        this.graphics.y = HEIGHT/2;
       }
-    }, this.recoilDuration);
-
-    return true;
+    };
+    
+    animateRecoil();
   }
 
   // Animation ticker function
@@ -151,5 +146,11 @@ export class Turret {
   // Smooth easing function
   easeInOutQuad(t) {
     return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  }
+
+  destroy() {
+    if (this.graphics && this.graphics.parent) {
+      this.graphics.parent.removeChild(this.graphics);
+    }
   }
 }

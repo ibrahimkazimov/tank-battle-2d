@@ -2,13 +2,14 @@ import { Player } from './player.js';
 import { WallManager } from './wall.js';
 import { Flag } from './flag.js';
 import { BulletManager } from './bullet.js';
+import { NetworkManager } from '../network/networkManager.js';
 import { WIDTH, HEIGHT, BACKGROUND_COLOR, PLAYER2_SHOOT_INTERVAL } from '../constants.js';
 
 export class Game {
   constructor() {
     this.app = null;
     this.player = null;
-    this.player2 = null;
+    this.otherPlayers = new Map();
     this.wallManager = null;
     this.bulletManager = null;
     this.flag = null;
@@ -16,6 +17,7 @@ export class Game {
     this.gameScale = 1;
     this.logicalWidth = WIDTH;
     this.logicalHeight = HEIGHT;
+    this.networkManager = null;
     
     // Camera animation properties
     this.cameraAnimation = null;
@@ -101,38 +103,40 @@ export class Game {
     this.wallManager = new WallManager(this.app, this.worldContainer);
     this.wallManager.createDefaultWalls();
     
-    // Create players at opposite corners
-    this.player = new Player(this.app, this.wallManager, false, -this.logicalWidth/2 + 100, -this.logicalHeight/2 + 100);
-    this.player2 = new Player(this.app, this.wallManager, true, this.logicalWidth/2 - 100, this.logicalHeight/2 - 100, this.worldContainer);
+    // Initialize network manager
+    this.networkManager = new NetworkManager(this);
+    this.networkManager.connect();
     
+    // Initialize bullet manager
     this.bulletManager = new BulletManager(this.app, this.wallManager, this.worldContainer);
-    this.bulletManager.setPlayers([this.player, this.player2]);
     
     // Setup event listeners
     this.setupEventListeners();
     
     // Start game loop
     this.setupGameLoop();
-    
-    // Start AI shooting
-    this.startAIBehavior();
   }
   
   setupEventListeners() {
     // Mouse movement for turret rotation - adjust for scale
     this.app.stage.on("pointermove", (event) => {
-      const mousePosition = event.data.global;
-      // Convert screen coordinates to logical game coordinates
-      const logicalX = (mousePosition.x - this.app.stage.position.x) / this.gameScale;
-      const logicalY = (mousePosition.y - this.app.stage.position.y) / this.gameScale;
-      this.player.updateTurretRotation(logicalX, logicalY);
+      if (this.player) {
+        const mousePosition = event.data.global;
+        // Convert screen coordinates to world coordinates
+        const worldX = (mousePosition.x - this.app.stage.position.x) / this.gameScale - this.worldContainer.x;
+        const worldY = (mousePosition.y - this.app.stage.position.y) / this.gameScale - this.worldContainer.y;
+        
+        // Update player's turret rotation
+        this.player.updateTurretRotation(worldX, worldY);
+      }
     });
     
     // Mouse click for shooting
     this.app.stage.on("pointerdown", () => {
-      if (!this.player.isDead) {
-        const turretPos = this.player.getTurretPosition();
-        this.bulletManager.createBullet(turretPos.x, turretPos.y, turretPos.rotation, this.player);
+      if (this.player && !this.player.isDead) {
+        // Get the current rotation of the player's turret
+        const rotation = this.player.rotation;
+        this.networkManager.sendShoot(rotation);
       }
     });
     
@@ -154,34 +158,94 @@ export class Game {
   startAIBehavior() {
     // AI shooting interval
     setInterval(() => {
-      if (!this.player2.isDead) {
+      if (!this.player.isDead) {
         // Calculate angle to player
-        const dx = this.player.x - this.player2.x;
-        const dy = this.player.y - this.player2.y;
+        const dx = this.player.x - this.player.x;
+        const dy = this.player.y - this.player.y;
         const rotation = Math.atan2(dy, dx);
         
         // Update AI turret rotation
-        this.player2.turret.rotation = rotation;
+        this.player.turret.rotation = rotation;
         
         // Fire bullet
-        const turretPos = this.player2.getTurretPosition();
-        this.bulletManager.createBullet(turretPos.x, turretPos.y, rotation, this.player2);
+        const turretPos = this.player.getTurretPosition();
+        this.bulletManager.createBullet(turretPos.x, turretPos.y, rotation, this.player);
       }
     }, PLAYER2_SHOOT_INTERVAL);
   }
   
   setupGameLoop() {
     this.app.ticker.add(() => {
-      // Update player position
-      this.player.update(this.keys);
+      if (this.player) {
+        // Update player position with interpolation
+        const alpha = 0.1; // Interpolation factor
+        this.player.x += (this.player.targetX - this.player.x) * alpha;
+        this.player.y += (this.player.targetY - this.player.y) * alpha;
+        
+        // Send input to server
+        this.networkManager.sendInput({
+          left: this.keys.ArrowLeft || this.keys.a,
+          right: this.keys.ArrowRight || this.keys.d,
+          up: this.keys.ArrowUp || this.keys.w,
+          down: this.keys.ArrowDown || this.keys.s
+        });
+        
+        // Update world container position to keep player centered
+        const screenCenterX = this.app.screen.width / 2;
+        const screenCenterY = this.app.screen.height / 2;
+        
+        // Calculate the world container position that will center the player
+        this.worldContainer.x = screenCenterX - (this.player.x * this.gameScale) - this.app.stage.position.x;
+        this.worldContainer.y = screenCenterY - (this.player.y * this.gameScale) - this.app.stage.position.y;
+      }
       
-      // Update AI position
-      this.player2.update({});  // Pass empty keys object since AI doesn't use keyboard input
-      
-      // Update world container position (opposite of player movement)
-      this.worldContainer.x = -this.player.x;
-      this.worldContainer.y = -this.player.y;
+      // Update other players' positions with interpolation
+      this.updateOtherPlayers();
     });
+  }
+  
+  updateOtherPlayers() {
+    this.otherPlayers.forEach((otherPlayer, id) => {
+      if (otherPlayer.targetX !== undefined) {
+        // Interpolate position
+        const alpha = 0.1; // Interpolation factor
+        otherPlayer.x += (otherPlayer.targetX - otherPlayer.x) * alpha;
+        otherPlayer.y += (otherPlayer.targetY - otherPlayer.y) * alpha;
+        otherPlayer.rotation += (otherPlayer.targetRotation - otherPlayer.rotation) * alpha;
+      }
+    });
+  }
+  
+  updateOtherPlayer(serverPlayer) {
+    let otherPlayer = this.otherPlayers.get(serverPlayer.id);
+    
+    if (!otherPlayer) {
+      // Create new player if it doesn't exist
+      otherPlayer = new Player(this.app, this.wallManager, true, serverPlayer.x, serverPlayer.y, this.worldContainer);
+      this.otherPlayers.set(serverPlayer.id, otherPlayer);
+    }
+    
+    // Update target position for interpolation
+    otherPlayer.targetX = serverPlayer.x;
+    otherPlayer.targetY = serverPlayer.y;
+    otherPlayer.targetRotation = serverPlayer.rotation;
+    otherPlayer.health = serverPlayer.health;
+    otherPlayer.isDead = serverPlayer.isDead;
+  }
+  
+  updateBullets(serverBullets) {
+    // Update each bullet from the server
+    serverBullets.forEach(serverBullet => {
+      this.bulletManager.updateBullet(serverBullet);
+    });
+  }
+  
+  removePlayer(playerId) {
+    const otherPlayer = this.otherPlayers.get(playerId);
+    if (otherPlayer) {
+      otherPlayer.destroy();
+      this.otherPlayers.delete(playerId);
+    }
   }
   
   animateCameraToPosition(targetX, targetY) {
@@ -223,7 +287,6 @@ export class Game {
   
   destroy() {
     this.player.destroy();
-    this.player2.destroy();
     this.app.destroy();
   }
 }

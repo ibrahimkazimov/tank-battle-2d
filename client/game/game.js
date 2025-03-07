@@ -187,7 +187,8 @@ export class Game {
           left: this.keys.ArrowLeft || this.keys.a,
           right: this.keys.ArrowRight || this.keys.d,
           up: this.keys.ArrowUp || this.keys.w,
-          down: this.keys.ArrowDown || this.keys.s
+          down: this.keys.ArrowDown || this.keys.s,
+          rotation: this.player.rotation // Send current rotation
         });
         
         // Update world container position to keep player centered
@@ -207,11 +208,10 @@ export class Game {
   updateOtherPlayers() {
     this.otherPlayers.forEach((otherPlayer, id) => {
       if (otherPlayer.targetX !== undefined) {
-        // Interpolate position
+        // Interpolate position only
         const alpha = 0.1; // Interpolation factor
         otherPlayer.x += (otherPlayer.targetX - otherPlayer.x) * alpha;
         otherPlayer.y += (otherPlayer.targetY - otherPlayer.y) * alpha;
-        otherPlayer.rotation += (otherPlayer.targetRotation - otherPlayer.rotation) * alpha;
       }
     });
   }
@@ -228,7 +228,12 @@ export class Game {
     // Update target position for interpolation
     otherPlayer.targetX = serverPlayer.x;
     otherPlayer.targetY = serverPlayer.y;
-    otherPlayer.targetRotation = serverPlayer.rotation;
+    
+    // Update rotation instantly without interpolation
+    if (serverPlayer.rotation !== undefined) {
+      otherPlayer.rotation = serverPlayer.rotation;
+    }
+    
     otherPlayer.health = serverPlayer.health;
     otherPlayer.isDead = serverPlayer.isDead;
   }

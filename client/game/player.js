@@ -185,10 +185,15 @@ export class Player {
       angle += 2 * Math.PI;
     }
     
-    // Update both player and turret rotation directly without interpolation
-    this._rotation = angle;
-    this.graphics.rotation = angle;
-    this.turret.graphics.rotation = angle;
+    // For local player, update rotation instantly
+    if (!this.isAI) {
+      this._rotation = angle;
+      this.graphics.rotation = angle;
+      this.turret.graphics.rotation = angle;
+    }
+    
+    // Still set target rotation for network sync
+    this.targetRotation = angle;
   }
   
   getTurretPosition() {

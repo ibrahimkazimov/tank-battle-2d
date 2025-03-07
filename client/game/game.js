@@ -262,8 +262,15 @@ export class Game {
     // Store start and target positions
     this.cameraStartX = this.worldContainer.x;
     this.cameraStartY = this.worldContainer.y;
-    this.cameraTargetX = -targetX;
-    this.cameraTargetY = -targetY;
+    
+    // Calculate target position in screen space
+    const screenCenterX = this.app.screen.width / 2;
+    const screenCenterY = this.app.screen.height / 2;
+    
+    // Target position should center the target coordinates on screen
+    this.cameraTargetX = screenCenterX - (targetX * this.gameScale) - this.app.stage.position.x;
+    this.cameraTargetY = screenCenterY - (targetY * this.gameScale) - this.app.stage.position.y;
+    
     this.cameraAnimationStartTime = Date.now();
 
     // Create smooth easing function

@@ -264,7 +264,15 @@ export class Game {
     
     if (!otherPlayer) {
       // Create new player if it doesn't exist
-      otherPlayer = new Player(this.app, this.wallManager, true, serverPlayer.x, serverPlayer.y, this.worldContainer);
+      otherPlayer = new Player(
+        this.app,
+        this.wallManager,
+        true,
+        serverPlayer.x,
+        serverPlayer.y,
+        this.worldContainer,
+        serverPlayer.color
+      );
       this.otherPlayers.set(serverPlayer.id, otherPlayer);
     }
     
@@ -277,8 +285,25 @@ export class Game {
       otherPlayer.rotation = serverPlayer.rotation;
     }
     
+    // Update health and handle death/respawn state changes
     otherPlayer.health = serverPlayer.health;
-    otherPlayer.isDead = serverPlayer.isDead;
+    if (serverPlayer.isDead !== otherPlayer.isDead) {
+      otherPlayer.isDead = serverPlayer.isDead;
+      if (serverPlayer.isDead) {
+        otherPlayer.die();
+      } else {
+        // Handle respawn
+        otherPlayer.graphics.visible = true;
+        if (otherPlayer.turret && otherPlayer.turret.graphics) {
+          otherPlayer.turret.graphics.visible = true;
+        }
+        otherPlayer.x = serverPlayer.x;
+        otherPlayer.y = serverPlayer.y;
+        otherPlayer.clearExplosionParticles();
+      }
+    }
+    
+    otherPlayer.color = serverPlayer.color;
   }
   
   updateBullets(serverBullets) {

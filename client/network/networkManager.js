@@ -46,10 +46,21 @@ export class NetworkManager {
       } else {
         // Update our own player's position
         if (this.game.player) {
+          // Only update health if it's different from current health
+          // and the server's health value is authoritative
+          if (this.game.player.health !== playerData.health) {
+            this.game.player.health = playerData.health;
+            if (this.game.player.healthBar) {
+              // Ensure health bar update happens after health is set
+              requestAnimationFrame(() => {
+                this.game.player.healthBar.update(playerData.health);
+              });
+            }
+          }
+          
           this.game.player.targetX = playerData.x;
           this.game.player.targetY = playerData.y;
           this.game.player.targetRotation = playerData.rotation;
-          this.game.player.health = playerData.health;
           this.game.player.color = playerData.color;
           
           // Handle death state change
@@ -140,31 +151,5 @@ export class NetworkManager {
       this.socket.disconnect();
       this.isConnected = false;
     }
-  }
-
-  updateOtherPlayer(serverPlayer) {
-    let otherPlayer = this.otherPlayers.get(serverPlayer.id);
-    
-    if (!otherPlayer) {
-      // Create new player if it doesn't exist
-      otherPlayer = new Player(
-        this.app,
-        this.wallManager,
-        true,
-        serverPlayer.x,
-        serverPlayer.y,
-        this.worldContainer,
-        serverPlayer.color
-      );
-      this.otherPlayers.set(serverPlayer.id, otherPlayer);
-    }
-    
-    // Update target position for interpolation
-    otherPlayer.targetX = serverPlayer.x;
-    otherPlayer.targetY = serverPlayer.y;
-    otherPlayer.targetRotation = serverPlayer.rotation;
-    otherPlayer.health = serverPlayer.health;
-    otherPlayer.isDead = serverPlayer.isDead;
-    otherPlayer.color = serverPlayer.color;
   }
 } 

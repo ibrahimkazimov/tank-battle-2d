@@ -157,7 +157,7 @@ const physics = {
   checkBulletCollisions(bullet) {
     const bulletRadius = GAME_CONSTANTS.BULLET_RADIUS;
     
-    // Check wall collisions
+    // Check wall collisions first
     for (const wall of gameState.walls) {
       const wallLeft = wall.x;
       const wallRight = wall.x + wall.width;
@@ -175,23 +175,32 @@ const physics = {
     
     // Check player collisions
     for (const [playerId, player] of gameState.players) {
-      // Skip if this is the bullet's source player or if player is dead
-      if (playerId === bullet.sourceId || player.isDead) {
+      // Skip collision check for dead players
+      if (player.isDead) {
         continue;
       }
       
+      // Calculate distance between bullet and player
       const dx = bullet.x - player.x;
       const dy = bullet.y - player.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
+      // Check if bullet hits player
       if (distance < GAME_CONSTANTS.PLAYER_RADIUS + bulletRadius) {
-        // Player hit by bullet (not the source)
+        // If this is the source player, ignore the collision but don't destroy the bullet
+        if (playerId === bullet.sourceId) {
+          continue;
+        }
+        
+        // Hit a different player - apply damage
         player.health -= GAME_CONSTANTS.BULLET_DAMAGE;
         if (player.health <= 0) {
           player.isDead = true;
           player.deathPosition = { x: player.x, y: player.y };
         }
-        return true; // Bullet hit a player
+        
+        // Always destroy the bullet when it hits a player, whether it kills them or not
+        return true;
       }
     }
     

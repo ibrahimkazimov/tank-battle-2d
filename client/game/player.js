@@ -27,9 +27,10 @@ export class Player {
     this.graphics = this.createGraphics();
     
     // Create health bar for main player only
-    if (!isAI) {
+    if (!this.isAI) {
       this.healthBar = new HealthBar(app);
-      this.healthBar.update(this.health);
+      // Ensure health bar shows full health initially
+      this.healthBar.update(PLAYER_MAX_HEALTH);
       this.healthBar.setName('Player 1');
     }
     
@@ -209,9 +210,7 @@ export class Player {
   takeDamage(amount) {
     if (this.isDead) return;
     
-    this.health -= amount;
-    
-    // Update health bar for main player
+    // Only update health bar if we're the main player
     if (!this.isAI && this.healthBar) {
       this.healthBar.update(this.health);
     }
@@ -229,13 +228,17 @@ export class Player {
     
     // Hide player and turret graphics
     this.graphics.visible = false;
-    this.turret.graphics.visible = false;
+    if (this.turret && this.turret.graphics) {
+      this.turret.graphics.visible = false;
+    }
     
     // Create explosion effect
     this.createExplosion();
     
-    // Start respawn timer
-    this.respawnTimer = setTimeout(() => this.respawn(), RESPAWN_TIME);
+    // Start respawn timer only for local player
+    if (!this.isAI) {
+      this.respawnTimer = setTimeout(() => this.respawn(), RESPAWN_TIME);
+    }
   }
   
   respawn() {
@@ -261,6 +264,12 @@ export class Player {
     this.clearExplosionParticles();
     this.explosionParticles = [];
 
+    // Make graphics visible again
+    this.graphics.visible = true;
+    if (this.turret && this.turret.graphics) {
+      this.turret.graphics.visible = true;
+    }
+
     // For the main player, animate camera to spawn position
     if (!this.isAI) {
       this.app.game.animateCameraToPosition(this.spawnX, this.spawnY);
@@ -268,8 +277,6 @@ export class Player {
       setTimeout(() => {
         this.x = this.spawnX;
         this.y = this.spawnY;
-        this.graphics.visible = true;
-        this.turret.graphics.visible = true;
         
         // Reset graphics rotation
         this.graphics.rotation = this._rotation;
@@ -287,8 +294,6 @@ export class Player {
     } else {
       this.x = this.spawnX;
       this.y = this.spawnY;
-      this.graphics.visible = true;
-      this.turret.graphics.visible = true;
       
       // Reset graphics rotation
       this.graphics.rotation = this._rotation;

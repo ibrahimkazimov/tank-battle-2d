@@ -175,6 +175,9 @@ export class Game {
       if (this.player && !this.player.isDead) {
         // Get the current rotation of the player's turret
         const rotation = this.player.rotation;
+        // Start recoil animation
+        this.player.turret.startRecoil();
+        // Send shoot event to server
         this.networkManager.sendShoot(rotation);
       }
     });
@@ -288,6 +291,11 @@ export class Game {
     // Update rotation instantly without interpolation
     if (serverPlayer.rotation !== undefined) {
       otherPlayer.rotation = serverPlayer.rotation;
+    }
+    
+    // Handle shooting state if provided
+    if (serverPlayer.isShooting && !otherPlayer.turret.isRecoiling) {
+      otherPlayer.turret.startRecoil();
     }
     
     // Update health and handle death/respawn state changes

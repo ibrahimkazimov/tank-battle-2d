@@ -349,7 +349,9 @@ io.on('connection', (socket) => {
     friction: 0.95,
     maxSpeed: GAME_CONSTANTS.PLAYER_SPEED * 2,
     isDead: false,
-    color: playerColor
+    color: playerColor,
+    isShooting: false,  // Add shooting state
+    lastShotTime: 0     // Track last shot time
   };
   
   gameState.players.set(socket.id, player);
@@ -419,6 +421,10 @@ io.on('connection', (socket) => {
       const bulletX = data.x + Math.cos(data.rotation) * turretLength;
       const bulletY = data.y + Math.sin(data.rotation) * turretLength;
       
+      // Set shooting state
+      player.isShooting = true;
+      player.lastShotTime = Date.now();
+      
       const bullet = {
         id: Date.now(),
         x: bulletX,
@@ -448,6 +454,14 @@ io.on('connection', (socket) => {
 // Game loop
 const TICK_INTERVAL = 1000 / GAME_CONSTANTS.TICK_RATE;
 setInterval(() => {
+  // Reset shooting states after a short delay
+  const currentTime = Date.now();
+  for (const [_, player] of gameState.players) {
+    if (player.isShooting && currentTime - player.lastShotTime > 100) {
+      player.isShooting = false;
+    }
+  }
+  
   // Update bullet positions and check collisions
   for (let i = gameState.bullets.length - 1; i >= 0; i--) {
     const bullet = gameState.bullets[i];

@@ -54,6 +54,7 @@ const GAME_CONSTANTS = {
   BULLET_RADIUS: 5,
   BULLET_SPEED: 7.5, // Increased 5x from 1.5
   BULLET_DAMAGE: 20,
+  BULLET_POWER: 0.5, // Knockback force multiplier
   TICK_RATE: 60,
   INTERPOLATION_DELAY: 100, // ms
   COLORS: {
@@ -204,6 +205,14 @@ const physics = {
         if (playerId === bullet.sourceId) {
           continue;
         }
+        
+        // Calculate normalized direction for knockback
+        const knockbackDirX = -dx / distance;
+        const knockbackDirY = -dy / distance;
+        
+        // Apply knockback force
+        player.velocityX += knockbackDirX * GAME_CONSTANTS.BULLET_POWER * GAME_CONSTANTS.BULLET_SPEED;
+        player.velocityY += knockbackDirY * GAME_CONSTANTS.BULLET_POWER * GAME_CONSTANTS.BULLET_SPEED;
         
         // Hit a different player - apply damage
         player.health -= GAME_CONSTANTS.BULLET_DAMAGE;
@@ -376,7 +385,7 @@ io.on('connection', (socket) => {
   socket.on('shoot', (data) => {
     const player = gameState.players.get(socket.id);
     if (player && !player.isDead) {
-      const turretLength = 30; // Length of turret
+      const turretLength = 30;
       
       // Calculate bullet spawn position using client position and velocity
       const bulletX = data.x + Math.cos(data.rotation) * turretLength;
@@ -391,6 +400,7 @@ io.on('connection', (socket) => {
         velocityY: Math.sin(data.rotation) * GAME_CONSTANTS.BULLET_SPEED,
         sourceId: socket.id,
         radius: GAME_CONSTANTS.BULLET_RADIUS,
+        power: GAME_CONSTANTS.BULLET_POWER,
         timestamp: Date.now()
       };
       gameState.bullets.push(bullet);

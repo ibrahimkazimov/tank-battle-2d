@@ -157,6 +157,9 @@ export class Player {
       const horizontalY = this.y;
       if (!this.checkWallCollision(horizontalX, horizontalY)) {
         this.x = horizontalX;
+      } else {
+        // Stop horizontal velocity on collision
+        this.velocityX *= -0.5; // Add some bounce effect
       }
       
       // Try moving only vertically
@@ -164,6 +167,9 @@ export class Player {
       const verticalY = this.y + this.velocityY;
       if (!this.checkWallCollision(verticalX, verticalY)) {
         this.y = verticalY;
+      } else {
+        // Stop vertical velocity on collision
+        this.velocityY *= -0.5; // Add some bounce effect
       }
     }
     
@@ -472,6 +478,23 @@ export class Player {
       
       // Animate camera to new position
       this.app.game.animateCameraToPosition(x, y);
+    }
+  }
+
+  // Add method to apply knockback
+  applyKnockback(directionX, directionY, power) {
+    if (this.isDead) return;
+    
+    // Apply knockback force as velocity change
+    this.velocityX += directionX * power;
+    this.velocityY += directionY * power;
+    
+    // Ensure velocity doesn't exceed max speed
+    const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
+    if (speed > this.maxSpeed) {
+      const scale = this.maxSpeed / speed;
+      this.velocityX *= scale;
+      this.velocityY *= scale;
     }
   }
 }

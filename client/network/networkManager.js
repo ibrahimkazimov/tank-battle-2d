@@ -63,6 +63,12 @@ export class NetworkManager {
             }
           }
           
+          // Update velocity for knockback
+          if (playerData.velocityX !== undefined && playerData.velocityY !== undefined) {
+            this.game.player.velocityX = playerData.velocityX;
+            this.game.player.velocityY = playerData.velocityY;
+          }
+          
           this.game.player.targetX = playerData.x;
           this.game.player.targetY = playerData.y;
           this.game.player.targetRotation = playerData.rotation;

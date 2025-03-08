@@ -270,30 +270,12 @@ export class Player {
       this.turret.graphics.visible = true;
     }
 
-    // For the main player, animate camera to spawn position
-    if (!this.isAI) {
-      this.app.game.animateCameraToPosition(this.spawnX, this.spawnY);
-
-      setTimeout(() => {
-        this.x = this.spawnX;
-        this.y = this.spawnY;
-        
-        // Reset graphics rotation
-        this.graphics.rotation = this._rotation;
-        this.turret.graphics.rotation = this._rotation;
-        
-        // Ensure turret is properly positioned
-        this.turret.graphics.x = this.graphics.x;
-        this.turret.graphics.y = this.graphics.y;
-        
-        // Reset target positions
-        this.targetX = this.spawnX;
-        this.targetY = this.spawnY;
-        this.targetRotation = this._rotation;
-      }, this.app.game.cameraAnimationDuration);
-    } else {
+    // For AI players, update position immediately
+    if (this.isAI) {
       this.x = this.spawnX;
       this.y = this.spawnY;
+      this.targetX = this.spawnX;
+      this.targetY = this.spawnY;
       
       // Reset graphics rotation
       this.graphics.rotation = this._rotation;
@@ -302,12 +284,8 @@ export class Player {
       // Ensure turret is properly positioned
       this.turret.graphics.x = this.graphics.x;
       this.turret.graphics.y = this.graphics.y;
-      
-      // Reset target positions
-      this.targetX = this.spawnX;
-      this.targetY = this.spawnY;
-      this.targetRotation = this._rotation;
     }
+    // For the main player, position will be updated when server sends spawn position
   }
   
   applyForce(forceX, forceY) {
@@ -469,6 +447,31 @@ export class Player {
       } else {
         this.app.stage.removeChild(particle);
       }
+    }
+  }
+
+  // Add method to update spawn position
+  updateSpawnPosition(x, y) {
+    this.spawnX = x;
+    this.spawnY = y;
+    
+    if (!this.isAI) {
+      // Update position immediately to prevent flicker
+      this.x = x;
+      this.y = y;
+      this.targetX = x;
+      this.targetY = y;
+      
+      // Reset graphics rotation
+      this.graphics.rotation = this._rotation;
+      this.turret.graphics.rotation = this._rotation;
+      
+      // Ensure turret is properly positioned
+      this.turret.graphics.x = this.graphics.x;
+      this.turret.graphics.y = this.graphics.y;
+      
+      // Animate camera to new position
+      this.app.game.animateCameraToPosition(x, y);
     }
   }
 }

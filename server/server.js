@@ -23,11 +23,24 @@ const gameState = {
     { x: -1000, y: -1000, width: 20, height: 2000 }, // Left
     { x: 980, y: -1000, width: 20, height: 2000 },   // Right
     
-    // Inner walls
-    { x: -500, y: -500, width: 100, height: 20 },    // Horizontal
-    { x: -500, y: -500, width: 20, height: 100 },    // Vertical
-    { x: 400, y: 400, width: 100, height: 20 },      // Horizontal
-    { x: 400, y: 400, width: 20, height: 100 }       // Vertical
+        // Inner walls (Balanced & Strategic)
+    { x: -500, y: -500, width: 150, height: 20 },    // Horizontal - Top Left
+    { x: -500, y: -450, width: 20, height: 150 },    // Vertical - Top Left
+
+    { x: 350, y: -500, width: 150, height: 20 },     // Horizontal - Top Right
+    { x: 450, y: -450, width: 20, height: 150 },     // Vertical - Top Right
+
+    { x: -500, y: 400, width: 150, height: 20 },     // Horizontal - Bottom Left
+    { x: -500, y: 400, width: 20, height: 150 },     // Vertical - Bottom Left
+
+    { x: 400, y: 400, width: 150, height: 20 },      // Horizontal - Bottom Right
+    { x: 450, y: 400, width: 20, height: 150 },      // Vertical - Bottom Right
+
+    // Central Structure (Creates a chokepoint)
+    { x: -100, y: -100, width: 200, height: 20 },    // Horizontal
+    { x: -100, y: -100, width: 20, height: 200 },    // Vertical
+    { x: 80, y: -100, width: 20, height: 200 },      // Vertical
+    { x: -100, y: 80, width: 200, height: 20 }       // Horizontal
   ],
   lastUpdateTime: Date.now(),
   colorIndex: 0 // Keep track of assigned colors
@@ -231,6 +244,45 @@ const physics = {
       player.y = WORLD_BOUNDS.bottom;
       player.velocityY = 0;
     }
+  },
+
+  findSafeSpawnPosition() {
+    const maxAttempts = 100;
+    const PLAYER_RADIUS = GAME_CONSTANTS.PLAYER_RADIUS;
+    
+    // Calculate bounds from outer walls (first 4 walls are outer walls)
+    const outerWalls = gameState.walls.slice(0, 4);
+    const bounds = {
+      left: outerWalls[2].x + PLAYER_RADIUS,
+      right: outerWalls[3].x - PLAYER_RADIUS,
+      top: outerWalls[0].y + PLAYER_RADIUS,
+      bottom: outerWalls[1].y - PLAYER_RADIUS
+    };
+    
+    for (let i = 0; i < maxAttempts; i++) {
+      // Generate random position within bounds
+      const x = bounds.left + Math.random() * (bounds.right - bounds.left);
+      const y = bounds.top + Math.random() * (bounds.bottom - bounds.top);
+      
+      // Check if position collides with any walls
+      let collides = false;
+      for (const wall of gameState.walls) {
+        if (x + PLAYER_RADIUS > wall.x && 
+            x - PLAYER_RADIUS < wall.x + wall.width &&
+            y + PLAYER_RADIUS > wall.y && 
+            y - PLAYER_RADIUS < wall.y + wall.height) {
+          collides = true;
+          break;
+        }
+      }
+      
+      if (!collides) {
+        return { x, y };
+      }
+    }
+    
+    // If no safe position found, return center position
+    return { x: 0, y: 0 };
   }
 };
 
@@ -243,16 +295,19 @@ io.on('connection', (socket) => {
   const playerColor = colors[gameState.colorIndex % colors.length];
   gameState.colorIndex++;
   
-  // Initialize player with a safe spawn position
+  // Find a safe spawn position
+  const spawnPos = physics.findSafeSpawnPosition();
+  
+  // Initialize player with safe spawn position
   const player = {
     id: socket.id,
-    x: 0, // Spawn at center
-    y: 0,
+    x: spawnPos.x,
+    y: spawnPos.y,
     rotation: 0,
     health: GAME_CONSTANTS.PLAYER_MAX_HEALTH,
     velocityX: 0,
     velocityY: 0,
-    acceleration: 1.0, // Increased from 0.5 for faster acceleration
+    acceleration: 1.0,
     friction: 0.95,
     maxSpeed: GAME_CONSTANTS.PLAYER_SPEED * 2,
     isDead: false,
@@ -266,7 +321,7 @@ io.on('connection', (socket) => {
     players: Array.from(gameState.players.values()),
     bullets: gameState.bullets,
     walls: gameState.walls,
-    spawnPosition: { x: player.x, y: player.y }
+    spawnPosition: { x: spawnPos.x, y: spawnPos.y }
   });
   
   // Handle player input
@@ -295,14 +350,25 @@ io.on('connection', (socket) => {
   socket.on('respawn', () => {
     const player = gameState.players.get(socket.id);
     if (player && player.isDead) {
+      // Find a safe spawn position
+      const spawnPos = physics.findSafeSpawnPosition();
+      
       // Reset player state
       player.isDead = false;
       player.health = GAME_CONSTANTS.PLAYER_MAX_HEALTH;
-      player.x = 0;  // Respawn at center
-      player.y = 0;
+      player.x = spawnPos.x;
+      player.y = spawnPos.y;
       player.velocityX = 0;
       player.velocityY = 0;
       player.rotation = 0;
+
+      // Send immediate update to the respawning player with spawn position
+      socket.emit('gameState', {
+        players: Array.from(gameState.players.values()),
+        bullets: gameState.bullets,
+        spawnPosition: spawnPos,
+        timestamp: Date.now()
+      });
     }
   });
   

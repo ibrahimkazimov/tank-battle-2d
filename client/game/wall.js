@@ -40,19 +40,68 @@ export class WallManager {
     return this.walls;
   }
   
-  // Generate some example walls
-  createDefaultWalls() {
-    // Create walls to form a bounded area
-    // Outer walls
-    this.createWall(-1000, -1000, 2000, 20);  // Top
-    this.createWall(-1000, 980, 2000, 20);    // Bottom
-    this.createWall(-1000, -1000, 20, 2000);  // Left
-    this.createWall(980, -1000, 20, 2000);    // Right
+  // Create walls from server data
+  createWallsFromData(wallsData) {
+    // Clear existing walls
+    this.walls.forEach(wall => {
+      if (wall.graphics) {
+        wall.graphics.destroy();
+      }
+    });
+    this.walls = [];
     
-    // Inner walls
-    this.createWall(-500, -500, 100, 20);     // Horizontal
-    this.createWall(-500, -500, 20, 100);     // Vertical
-    this.createWall(400, 400, 100, 20);       // Horizontal
-    this.createWall(400, 400, 20, 100);       // Vertical
+    // Create new walls from server data
+    wallsData.forEach(wallData => {
+      this.createWall(wallData.x, wallData.y, wallData.width, wallData.height);
+    });
+  }
+  
+  // Helper function to check if a point collides with any wall
+  checkPointCollision(x, y, radius) {
+    for (const wall of this.walls) {
+      const wallLeft = wall.x;
+      const wallRight = wall.x + wall.width;
+      const wallTop = wall.y;
+      const wallBottom = wall.y + wall.height;
+      
+      // Check if point (with radius) intersects with wall
+      if (x + radius > wallLeft && 
+          x - radius < wallRight &&
+          y + radius > wallTop && 
+          y - radius < wallBottom) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  // Find a safe spawn position within the outer walls
+  findSafeSpawnPosition(radius) {
+    const maxAttempts = 100;
+    const outerWalls = this.walls.slice(0, 4); // First 4 walls are outer walls
+    
+    if (outerWalls.length < 4) return { x: 0, y: 0 }; // Fallback to center
+    
+    // Calculate bounds from outer walls
+    const bounds = {
+      left: outerWalls[2].x + radius,
+      right: outerWalls[3].x - radius,
+      top: outerWalls[0].y + radius,
+      bottom: outerWalls[1].y - radius
+    };
+    
+    for (let i = 0; i < maxAttempts; i++) {
+      // Generate random position within bounds
+      const x = bounds.left + Math.random() * (bounds.right - bounds.left);
+      const y = bounds.top + Math.random() * (bounds.bottom - bounds.top);
+      
+      // Check if position is clear of walls
+      if (!this.checkPointCollision(x, y, radius)) {
+        return { x, y };
+      }
+    }
+    
+    // If no position found, return center position
+    return { x: 0, y: 0 };
   }
 }

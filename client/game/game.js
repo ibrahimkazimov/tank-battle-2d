@@ -48,6 +48,9 @@ export class Game {
       f: "F",
       F: "F",
     };
+    
+    // Add camera control flag
+    this.isCameraAnimating = false;
   }
   
   calculateScale() {
@@ -135,7 +138,6 @@ export class Game {
     
     // Initialize game objects
     this.wallManager = new WallManager(this.app, this.worldContainer);
-    this.wallManager.createDefaultWalls();
     
     // Initialize network manager
     this.networkManager = new NetworkManager(this);
@@ -228,13 +230,16 @@ export class Game {
           rotation: this.player.rotation
         });
         
-        // Update world container position to keep player centered
-        const screenCenterX = this.app.screen.width / 2;
-        const screenCenterY = this.app.screen.height / 2;
-        
-        // Calculate the world container position that will center the player
-        this.worldContainer.x = screenCenterX - (this.player.x * this.gameScale) - this.app.stage.position.x;
-        this.worldContainer.y = screenCenterY - (this.player.y * this.gameScale) - this.app.stage.position.y;
+        // Only update camera position if not animating
+        if (!this.isCameraAnimating) {
+          // Update world container position to keep player centered
+          const screenCenterX = this.app.screen.width / 2;
+          const screenCenterY = this.app.screen.height / 2;
+          
+          // Calculate the world container position that will center the player
+          this.worldContainer.x = screenCenterX - (this.player.x * this.gameScale) - this.app.stage.position.x;
+          this.worldContainer.y = screenCenterY - (this.player.y * this.gameScale) - this.app.stage.position.y;
+        }
         
         // Update view mask position
         if (this.viewMask) {
@@ -325,24 +330,28 @@ export class Game {
     // Clear any existing camera animation
     if (this.cameraAnimation) {
       this.app.ticker.remove(this.cameraAnimation);
+      this.isCameraAnimating = false;
     }
 
-    // Store start and target positions
-    this.cameraStartX = this.worldContainer.x;
-    this.cameraStartY = this.worldContainer.y;
-    
-    // Calculate target position in screen space
+    // Calculate current and target world positions
     const screenCenterX = this.app.screen.width / 2;
     const screenCenterY = this.app.screen.height / 2;
     
-    // Target position should center the target coordinates on screen
+    // Store start position (current world container position)
+    this.cameraStartX = this.worldContainer.x;
+    this.cameraStartY = this.worldContainer.y;
+    
+    // Calculate final target position
     this.cameraTargetX = screenCenterX - (targetX * this.gameScale) - this.app.stage.position.x;
     this.cameraTargetY = screenCenterY - (targetY * this.gameScale) - this.app.stage.position.y;
     
     this.cameraAnimationStartTime = Date.now();
+    this.isCameraAnimating = true;
 
     // Create smooth easing function
-    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+    const easeOutCubic = (t) => {
+      return 1 - Math.pow(1 - t, 3);
+    };
 
     // Create animation function
     this.cameraAnimation = () => {
@@ -358,6 +367,7 @@ export class Game {
       if (progress >= 1) {
         this.app.ticker.remove(this.cameraAnimation);
         this.cameraAnimation = null;
+        this.isCameraAnimating = false;
       }
     };
 
@@ -368,5 +378,10 @@ export class Game {
   destroy() {
     this.player.destroy();
     this.app.destroy();
+  }
+  
+  // Add method to find safe spawn position
+  findSafeSpawnPosition() {
+    return this.wallManager.findSafeSpawnPosition(PLAYER_RADIUS);
   }
 }

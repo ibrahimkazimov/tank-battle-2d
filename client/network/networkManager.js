@@ -39,6 +39,11 @@ export class NetworkManager {
   }
 
   handleGameState(data) {
+    // Create walls if they are provided in initial state
+    if (data.walls) {
+      this.game.wallManager.createWallsFromData(data.walls);
+    }
+    
     // Update other players
     data.players.forEach(playerData => {
       if (playerData.id !== this.socket.id) {
@@ -105,11 +110,8 @@ export class NetworkManager {
           playerData.color
         );
       } else {
-        // Update existing player position
-        this.game.player.x = data.spawnPosition.x;
-        this.game.player.y = data.spawnPosition.y;
-        this.game.player.targetX = data.spawnPosition.x;
-        this.game.player.targetY = data.spawnPosition.y;
+        // Update existing player's spawn position
+        this.game.player.updateSpawnPosition(data.spawnPosition.x, data.spawnPosition.y);
       }
     }
   }

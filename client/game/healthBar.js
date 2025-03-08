@@ -9,9 +9,11 @@ export class HealthBar {
     this.borderRadius = 5;
     this.graphics = this.createGraphics();
     
-    // Position at bottom center of screen
-    this.graphics.x = WIDTH / 2 - this.width / 2;
-    this.graphics.y = HEIGHT - 40; // 40 pixels from bottom
+    // Initial positioning
+    this.updatePosition();
+    
+    // Add resize listener
+    window.addEventListener('resize', () => this.updatePosition());
     
     this.app.stage.addChild(this.graphics);
   }
@@ -57,6 +59,26 @@ export class HealthBar {
     return container;
   }
 
+  updatePosition() {
+    // Calculate position based on current screen size
+    const margin = 40; // Increased margin from the bottom
+    
+    // Get the game's stage position and scale
+    const scale = this.app.game ? this.app.game.gameScale : 1;
+    const stageX = this.app.stage.position.x;
+    const stageY = this.app.stage.position.y;
+    
+    // Calculate screen center in stage coordinates
+    const screenCenterX = (window.innerWidth / 2 - stageX) / scale;
+    
+    // Position at bottom center of screen, accounting for stage position
+    this.graphics.x = screenCenterX - (this.width / 2);
+    this.graphics.y = (window.innerHeight - stageY) / scale - this.height - margin;
+    
+    // Keep health bar at consistent scale
+    this.graphics.scale.set(1);
+  }
+
   // Helper function to draw rounded rectangle
   drawRoundedRect(ctx, x, y, width, height, radius) {
     ctx.beginPath();
@@ -83,13 +105,19 @@ export class HealthBar {
                         this.height - this.borderWidth * 2, 
                         this.borderRadius - this.borderWidth);
     this.healthBar.context.fill();
+    
+    // Update position in case of any changes
+    this.updatePosition();
   }
 
   setName(name) {
     this.nameText.text = name;
+    // Recenter name text
+    this.nameText.x = this.width / 2 - this.nameText.width / 2;
   }
   
   destroy() {
+    window.removeEventListener('resize', () => this.updatePosition());
     this.app.stage.removeChild(this.graphics);
   }
 } 

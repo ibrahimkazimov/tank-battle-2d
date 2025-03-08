@@ -55,6 +55,10 @@ const GAME_CONSTANTS = {
   BULLET_SPEED: 7.5, // Increased 5x from 1.5
   BULLET_DAMAGE: 20,
   BULLET_POWER: 0.5, // Knockback force multiplier
+  BULLET_HEALTH: 40,      // New: Initial bullet health
+  BULLET_VS_BULLET_DAMAGE: 40, // New: Damage when bullets collide
+  BULLET_DESTRUCTION_TIME: 50, // Reduced from 100 to 50ms for faster disappearance
+  BULLET_FADE_SPEED: 0.8, // Speed reduction factor during fade out
   TICK_RATE: 60,
   INTERPOLATION_DELAY: 100, // ms
   COLORS: {
@@ -171,57 +175,82 @@ const physics = {
   checkBulletCollisions(bullet) {
     const bulletRadius = GAME_CONSTANTS.BULLET_RADIUS;
     
-    // Check wall collisions first
+    // Skip collision checks for destroying bullets
+    if (bullet.destroying) {
+      return false;
+    }
+    
+    // Check bullet-to-bullet collisions first
+    for (const otherBullet of gameState.bullets) {
+      // Skip self-collision, destroying bullets, and bullets from same team
+      if (otherBullet === bullet || otherBullet.sourceId === bullet.sourceId || otherBullet.destroying) {
+        continue;
+      }
+      
+      // Calculate distance between bullets
+      const dx = bullet.x - otherBullet.x;
+      const dy = bullet.y - otherBullet.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Check if bullets collide
+      if (distance < bulletRadius * 2) {
+        // Damage both bullets
+        bullet.health -= GAME_CONSTANTS.BULLET_VS_BULLET_DAMAGE;
+        otherBullet.health -= GAME_CONSTANTS.BULLET_VS_BULLET_DAMAGE;
+        
+        // Start destruction animation if health depleted
+        if (otherBullet.health <= 0) {
+          startBulletDestruction(otherBullet);
+        }
+        if (bullet.health <= 0) {
+          startBulletDestruction(bullet);
+          return false; // Don't immediately destroy, let it fade out
+        }
+      }
+    }
+    
+    // Check wall collisions
     for (const wall of gameState.walls) {
       const wallLeft = wall.x;
       const wallRight = wall.x + wall.width;
       const wallTop = wall.y;
       const wallBottom = wall.y + wall.height;
       
-      // Check if bullet is within wall bounds
       if (bullet.x + bulletRadius > wallLeft && 
           bullet.x - bulletRadius < wallRight &&
           bullet.y + bulletRadius > wallTop && 
           bullet.y - bulletRadius < wallBottom) {
-        return true; // Bullet hit a wall
+        return true;
       }
     }
     
     // Check player collisions
     for (const [playerId, player] of gameState.players) {
-      // Skip collision check for dead players
       if (player.isDead) {
         continue;
       }
       
-      // Calculate distance between bullet and player
       const dx = bullet.x - player.x;
       const dy = bullet.y - player.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      // Check if bullet hits player
       if (distance < GAME_CONSTANTS.PLAYER_RADIUS + bulletRadius) {
-        // If this is the source player, ignore the collision but don't destroy the bullet
         if (playerId === bullet.sourceId) {
           continue;
         }
         
-        // Calculate normalized direction for knockback
         const knockbackDirX = -dx / distance;
         const knockbackDirY = -dy / distance;
         
-        // Apply knockback force
         player.velocityX += knockbackDirX * GAME_CONSTANTS.BULLET_POWER * GAME_CONSTANTS.BULLET_SPEED;
         player.velocityY += knockbackDirY * GAME_CONSTANTS.BULLET_POWER * GAME_CONSTANTS.BULLET_SPEED;
         
-        // Hit a different player - apply damage
         player.health -= GAME_CONSTANTS.BULLET_DAMAGE;
         if (player.health <= 0) {
           player.isDead = true;
           player.deathPosition = { x: player.x, y: player.y };
         }
         
-        // Always destroy the bullet when it hits a player, whether it kills them or not
         return true;
       }
     }
@@ -387,7 +416,6 @@ io.on('connection', (socket) => {
     if (player && !player.isDead) {
       const turretLength = 30;
       
-      // Calculate bullet spawn position using client position and velocity
       const bulletX = data.x + Math.cos(data.rotation) * turretLength;
       const bulletY = data.y + Math.sin(data.rotation) * turretLength;
       
@@ -401,6 +429,8 @@ io.on('connection', (socket) => {
         sourceId: socket.id,
         radius: GAME_CONSTANTS.BULLET_RADIUS,
         power: GAME_CONSTANTS.BULLET_POWER,
+        health: GAME_CONSTANTS.BULLET_HEALTH,
+        destroying: false,
         timestamp: Date.now()
       };
       gameState.bullets.push(bullet);
@@ -422,14 +452,24 @@ setInterval(() => {
   for (let i = gameState.bullets.length - 1; i >= 0; i--) {
     const bullet = gameState.bullets[i];
     
-    // Update bullet position
+    if (bullet.destroying) {
+      // Check if destruction animation is complete
+      if (Date.now() - bullet.destructionStartTime > GAME_CONSTANTS.BULLET_DESTRUCTION_TIME) {
+        gameState.bullets.splice(i, 1);
+        continue;
+      }
+      // Skip position update for destroying bullets
+      continue;
+    }
+    
+    // Update bullet position only if not destroying
     bullet.x += bullet.velocityX;
     bullet.y += bullet.velocityY;
     
     // Check for collisions
     if (physics.checkBulletCollisions(bullet)) {
-      // Remove bullet if it hit something
-      gameState.bullets.splice(i, 1);
+      startBulletDestruction(bullet);
+      continue;
     }
     
     // Remove bullets that are out of bounds
@@ -448,6 +488,15 @@ setInterval(() => {
   
   gameState.lastUpdateTime = Date.now();
 }, TICK_INTERVAL);
+
+// Update the startBulletDestruction function
+function startBulletDestruction(bullet) {
+  bullet.destroying = true;
+  bullet.destructionStartTime = Date.now();
+  // Stop the bullet completely
+  bullet.velocityX = 0;
+  bullet.velocityY = 0;
+}
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {

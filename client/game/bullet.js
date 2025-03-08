@@ -41,6 +41,11 @@ export class BulletManager {
     let bullet = this.bullets.get(serverBullet.id);
     
     if (!bullet) {
+      // Don't create new bullets that are already destroying
+      if (serverBullet.destroying) {
+        return;
+      }
+      
       // Create new bullet
       const sourcePlayer = serverBullet.sourceId === this.app.game.networkManager.socket.id 
         ? this.app.game.player 
@@ -57,6 +62,26 @@ export class BulletManager {
       bullet.id = serverBullet.id;
       this.bullets.set(serverBullet.id, bullet);
     } else {
+      // Handle destroying state
+      if (serverBullet.destroying) {
+        if (!bullet.destroying) {
+          // Start destruction animation
+          bullet.destroying = true;
+          bullet.destructionStartTime = Date.now();
+          // Add fade out effect
+          const fadeOut = () => {
+            bullet.alpha -= 0.2; // Fade out quickly
+            if (bullet.alpha <= 0) {
+              this.destroyBullet(bullet.id);
+            } else {
+              requestAnimationFrame(fadeOut);
+            }
+          };
+          fadeOut();
+        }
+        return;
+      }
+      
       // Update existing bullet
       bullet.x = serverBullet.x;
       bullet.y = serverBullet.y;

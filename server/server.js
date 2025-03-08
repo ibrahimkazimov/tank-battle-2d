@@ -49,23 +49,24 @@ const gameState = {
 // Game constants (moved from client)
 const GAME_CONSTANTS = {
   PLAYER_RADIUS: 20,
-  PLAYER_SPEED: 4.0, // Increased 4x from 1.0
+  PLAYER_SPEED: 4.0,
   PLAYER_MAX_HEALTH: 100,
   BULLET_RADIUS: 5,
-  BULLET_SPEED: 7.5, // Increased 5x from 1.5
+  BULLET_SPEED: 7.5,
   BULLET_DAMAGE: 20,
-  BULLET_POWER: 0.5, // Knockback force multiplier
-  BULLET_HEALTH: 40,      // New: Initial bullet health
-  BULLET_VS_BULLET_DAMAGE: 40, // New: Damage when bullets collide
-  BULLET_DESTRUCTION_TIME: 50, // Reduced from 100 to 50ms for faster disappearance
-  BULLET_FADE_SPEED: 0.8, // Speed reduction factor during fade out
+  BULLET_POWER: 0.5,
+  BULLET_HEALTH: 40,
+  BULLET_VS_BULLET_DAMAGE: 40,
+  BULLET_DESTRUCTION_TIME: 50,
+  BULLET_FADE_SPEED: 0.8,
+  FIRE_RATE: 250, // Time in milliseconds between shots (4 shots per second)
   TICK_RATE: 60,
-  INTERPOLATION_DELAY: 100, // ms
+  INTERPOLATION_DELAY: 100,
   COLORS: {
-    PLAYER1: '#4287f5', // Blue
-    PLAYER2: '#f54242', // Red
-    PLAYER3: '#42f554', // Green
-    PLAYER4: '#f542f5'  // Purple
+    PLAYER1: '#4287f5',
+    PLAYER2: '#f542f5',
+    PLAYER3: '#42f554',
+    PLAYER4: '#f542f5'
   }
 };
 
@@ -416,6 +417,12 @@ io.on('connection', (socket) => {
   socket.on('shoot', (data) => {
     const player = gameState.players.get(socket.id);
     if (player && !player.isDead) {
+      // Check fire rate
+      const now = Date.now();
+      if (now - player.lastShotTime < GAME_CONSTANTS.FIRE_RATE) {
+        return; // Too soon to shoot again
+      }
+
       const turretLength = 30;
       
       const bulletX = data.x + Math.cos(data.rotation) * turretLength;
@@ -423,7 +430,7 @@ io.on('connection', (socket) => {
       
       // Set shooting state
       player.isShooting = true;
-      player.lastShotTime = Date.now();
+      player.lastShotTime = now;
       
       const bullet = {
         id: Date.now(),

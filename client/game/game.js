@@ -19,6 +19,10 @@ export class Game {
     this.logicalHeight = HEIGHT;
     this.networkManager = null;
     
+    // Add fire rate tracking
+    this.lastShotTime = 0;
+    this.canShoot = true;
+    
     // Camera animation properties
     this.cameraAnimation = null;
     this.cameraStartX = 0;
@@ -173,6 +177,13 @@ export class Game {
     // Mouse click for shooting
     this.app.stage.on("pointerdown", () => {
       if (this.player && !this.player.isDead) {
+        const now = Date.now();
+        // Check if enough time has passed since last shot
+        if (now - this.lastShotTime < 250) { // Match server's FIRE_RATE
+          return; // Too soon to shoot again
+        }
+        
+        this.lastShotTime = now;
         // Get the current rotation of the player's turret
         const rotation = this.player.rotation;
         // Start recoil animation

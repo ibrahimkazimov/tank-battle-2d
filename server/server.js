@@ -327,7 +327,9 @@ const physics = {
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log('Player connected:', socket.id);
+  // Get player name from connection query
+  const playerName = socket.handshake.query.playerName || 'Anonymous';
+  console.log('Player connected:', socket.id, 'Name:', playerName);
   
   // Get next color from the color array
   const colors = Object.values(GAME_CONSTANTS.COLORS);
@@ -340,6 +342,7 @@ io.on('connection', (socket) => {
   // Initialize player with safe spawn position
   const player = {
     id: socket.id,
+    name: playerName,
     x: spawnPos.x,
     y: spawnPos.y,
     rotation: 0,
@@ -351,8 +354,8 @@ io.on('connection', (socket) => {
     maxSpeed: GAME_CONSTANTS.PLAYER_SPEED * 2,
     isDead: false,
     color: playerColor,
-    isShooting: false,  // Add shooting state
-    lastShotTime: 0     // Track last shot time
+    isShooting: false,
+    lastShotTime: 0
   };
   
   gameState.players.set(socket.id, player);

@@ -12,10 +12,9 @@ export class NetworkManager {
   }
 
   connect() {
-    this.socket = io(this.serverUrl, {
-      transports: ['websocket'],
-      cors: {
-        origin: "*"
+    this.socket = io({
+      query: {
+        playerName: this.game.playerName
       }
     });
     
@@ -115,6 +114,8 @@ export class NetworkManager {
           this.game.worldContainer,
           playerData.color
         );
+        // Set player name immediately
+        this.game.player.setName(this.game.playerName);
       } else {
         // Update existing player's spawn position
         this.game.player.updateSpawnPosition(data.spawnPosition.x, data.spawnPosition.y);

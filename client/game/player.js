@@ -17,6 +17,7 @@ export class Player {
     this.respawnTimer = null;
     this.explosionParticles = [];
     this.color = color;
+    this.name = '';
     
     // Store reference to game instance
     this.game = app.game;
@@ -31,7 +32,7 @@ export class Player {
       this.healthBar = new HealthBar(app);
       // Ensure health bar shows full health initially
       this.healthBar.update(PLAYER_MAX_HEALTH);
-      this.healthBar.setName('Player 1');
+      this.healthBar.setName(this.name);
     }
     
     // Set initial position
@@ -56,10 +57,35 @@ export class Player {
   }
   
   createGraphics() {
-    const player = new PIXI.Graphics();
-    player.context.fillStyle = this.color;
-    player.context.circle(0, 0, PLAYER_RADIUS);
-    player.context.fill();
+    const player = new PIXI.Container();
+    
+    // Create tank body container that will rotate
+    this.bodyContainer = new PIXI.Container();
+    player.addChild(this.bodyContainer);
+    
+    // Create tank body
+    const body = new PIXI.Graphics();
+    body.context.fillStyle = this.color;
+    body.context.circle(0, 0, PLAYER_RADIUS);
+    body.context.fill();
+    this.bodyContainer.addChild(body);
+    
+    // Create name text only for other players
+    if (this.isAI) {
+      this.nameText = new PIXI.Text('', {
+        fontFamily: 'Arial',
+        fontSize: 16,
+        fill: '#ffffff',
+        align: 'center',
+        dropShadow: true,
+        dropShadowColor: '#000000',
+        dropShadowBlur: 4,
+        dropShadowDistance: 2
+      });
+      this.nameText.anchor.set(0.5);
+      this.nameText.y = -40; // Position above tank
+      player.addChild(this.nameText); // Add to main container, not body container
+    }
     
     // Add to world container if it exists, otherwise add to app stage
     if (this.worldContainer) {
@@ -83,7 +109,10 @@ export class Player {
     this._rotation = value;
     if (this.turret) {
       this.turret.graphics.rotation = value;
-      this.graphics.rotation = value;
+      // Only rotate the body container, not the entire graphics container
+      if (this.bodyContainer) {
+        this.bodyContainer.rotation = value;
+      }
     }
   }
   
@@ -495,6 +524,18 @@ export class Player {
       const scale = this.maxSpeed / speed;
       this.velocityX *= scale;
       this.velocityY *= scale;
+    }
+  }
+
+  setName(name) {
+    this.name = name;
+    // Update floating name text only for other players
+    if (this.isAI && this.nameText) {
+      this.nameText.text = name;
+    }
+    // Update health bar name for main player
+    if (!this.isAI) {
+      this.healthBar?.setName(name);
     }
   }
 }

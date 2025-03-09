@@ -295,6 +295,9 @@ export class Game {
       this.otherPlayers.set(serverPlayer.id, otherPlayer);
     }
     
+    // Update player name
+    otherPlayer.setName(serverPlayer.name);
+    
     // Update target position for interpolation
     otherPlayer.targetX = serverPlayer.x;
     otherPlayer.targetY = serverPlayer.y;

@@ -146,6 +146,9 @@ export class NetworkManager {
           newPlayer.previousState = newState;
           newPlayer.targetState = null;
           newPlayer.isVisible = playerData.isVisible;
+          // Set name immediately after creation
+          newPlayer.setName(playerData.name);
+          
           if (newPlayer.graphics) {
             newPlayer.graphics.visible = playerData.isVisible;
           }

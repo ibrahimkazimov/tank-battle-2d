@@ -73,24 +73,27 @@ export class Player {
     body.context.fill();
     this.bodyContainer.addChild(body);
     
-    // Create name text only for other players
+    // Create name text only for other players (not for local player)
     if (this.isAI) {
-      this.nameText = new PIXI.Text({
-        text: '',
-        style: {
-          fontFamily: 'Arial',
-          fontSize: 16,
-          fill: '#ffffff',
-          align: 'center',
-          dropShadow: true,
-          dropShadowColor: '#000000',
-          dropShadowBlur: 4,
-          dropShadowDistance: 2
-        }
+      this.nameText = new PIXI.Text(this.name || '', {
+        fontFamily: 'Arial',
+        fontSize: 16,
+        fill: '#ffffff',
+        align: 'center',
+        stroke: '#000000',
+        strokeThickness: 4,
+        dropShadow: true,
+        dropShadowColor: '#000000',
+        dropShadowBlur: 4,
+        dropShadowDistance: 2
       });
       this.nameText.anchor.set(0.5);
-      this.nameText.y = -40; // Position above tank
-      player.addChild(this.nameText); // Add to main container, not body container
+      this.nameText.y = -PLAYER_RADIUS - 25;
+      player.addChild(this.nameText);
+      
+      // Ensure name is visible
+      this.nameText.visible = true;
+      this.nameText.zIndex = 1000; // Ensure it's above other elements
     }
     
     // Add to world container if it exists, otherwise add to app stage
@@ -275,6 +278,9 @@ export class Player {
     if (this.turret && this.turret.graphics) {
       this.turret.graphics.visible = false;
     }
+    if (this.nameText) {
+      this.nameText.visible = false;
+    }
     
     // Create explosion effect
     this.createExplosion();
@@ -315,6 +321,9 @@ export class Player {
     }
     if (this.turret && this.turret.graphics) {
       this.turret.graphics.visible = true;
+    }
+    if (this.nameText) {
+      this.nameText.visible = true;
     }
 
     // For AI players, update position immediately
@@ -544,9 +553,13 @@ export class Player {
     // Update floating name text only for other players
     if (this.isAI && this.nameText) {
       this.nameText.text = name;
+      this.nameText.visible = true;
+      
+      // Ensure name is always visible and not rotated with tank
+      this.nameText.rotation = -this.rotation;
     }
     // Update health bar name for main player
-    if (!this.isAI) {
+    if (!this.isAI && this.healthBar) {
       this.healthBar?.setName(name);
     }
   }

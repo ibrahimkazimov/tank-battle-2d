@@ -24,6 +24,7 @@ export class Player {
     
     // Create turret first so it's behind the player
     this.turret = new Turret(app, isAI, worldContainer, color);
+    this.turret.setPlayer(this); // Set player reference in turret
     
     this.graphics = this.createGraphics();
     

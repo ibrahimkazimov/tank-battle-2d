@@ -73,50 +73,53 @@ const GAME_CONSTANTS = {
 // Physics calculations
 const physics = {
   updatePlayer(player, input) {
+    const deltaTime = input.deltaTime || 1; // Default to 1 if not provided
+
     // Calculate acceleration based on input
     let ax = 0;
     let ay = 0;
     
-    if (input.left) ax -= player.acceleration;
-    if (input.right) ax += player.acceleration;
-    if (input.up) ay -= player.acceleration;
-    if (input.down) ay += player.acceleration;
+    if (input.left) ax -= player.acceleration * deltaTime;
+    if (input.right) ax += player.acceleration * deltaTime;
+    if (input.up) ay -= player.acceleration * deltaTime;
+    if (input.down) ay += player.acceleration * deltaTime;
     
     // Apply acceleration to velocity
     player.velocityX += ax;
     player.velocityY += ay;
     
-    // Apply friction
-    player.velocityX *= player.friction;
-    player.velocityY *= player.friction;
-    
+    // Apply friction (ensure friction is correctly scaled by deltaTime)
+    const frictionFactor = Math.pow(player.friction, deltaTime);
+    player.velocityX *= frictionFactor;
+    player.velocityY *= frictionFactor;
+
     // Limit speed
-    const speed = Math.sqrt(player.velocityX * player.velocityX + player.velocityY * player.velocityY);
+    const speed = Math.sqrt(player.velocityX ** 2 + player.velocityY ** 2);
     if (speed > player.maxSpeed) {
-      const scale = player.maxSpeed / speed;
-      player.velocityX *= scale;
-      player.velocityY *= scale;
+        const scale = player.maxSpeed / speed;
+        player.velocityX *= scale;
+        player.velocityY *= scale;
     }
-    
+
     // Calculate new position
-    const newX = player.x + player.velocityX;
-    const newY = player.y + player.velocityY;
-    
+    const newX = player.x + player.velocityX * deltaTime;
+    const newY = player.y + player.velocityY * deltaTime;
+
     // Check wall collisions before updating position
     const collision = this.checkWallCollisions(player, newX, newY);
-    
+
     // Update position based on collision
     if (!collision.x) {
-      player.x = newX;
+        player.x = newX;
     }
     if (!collision.y) {
-      player.y = newY;
+        player.y = newY;
     }
-    
+
     // Stop velocity in direction of collision
     if (collision.x) player.velocityX = 0;
     if (collision.y) player.velocityY = 0;
-    
+
     // Enforce world boundaries
     this.enforceWorldBoundaries(player);
   },
@@ -355,7 +358,8 @@ io.on('connection', (socket) => {
     isDead: false,
     color: playerColor,
     isShooting: false,
-    lastShotTime: 0
+    lastShotTime: 0,
+    lastProcessedInput: null
   };
   
   gameState.players.set(socket.id, player);
@@ -371,17 +375,21 @@ io.on('connection', (socket) => {
   // Handle player input
   socket.on('playerInput', (input) => {
     const player = gameState.players.get(socket.id);
-    if (player && !player.isDead) {  // Only process input if player is alive
+    if (player && !player.isDead) {
       // Map the input keys to movement
       const mappedInput = {
         left: input.left || input.ArrowLeft || input.a,
         right: input.right || input.ArrowRight || input.d,
         up: input.up || input.ArrowUp || input.w,
-        down: input.down || input.ArrowDown || input.s
+        down: input.down || input.ArrowDown || input.s,
+        deltaTime: input.deltaTime
       };
       
       // Update player movement
       physics.updatePlayer(player, mappedInput);
+      
+      // Store last processed input
+      player.lastProcessedInput = input.sequenceNumber;
       
       // Update player rotation if provided
       if (input.rotation !== undefined) {
@@ -505,7 +513,10 @@ setInterval(() => {
   
   // Broadcast game state to all clients
   io.emit('gameState', {
-    players: Array.from(gameState.players.values()),
+    players: Array.from(gameState.players.values()).map(player => ({
+      ...player,
+      lastProcessedInput: player.lastProcessedInput // Include the last processed input
+    })),
     bullets: gameState.bullets,
     timestamp: Date.now()
   });

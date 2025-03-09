@@ -9,6 +9,8 @@ export class NetworkManager {
     this.interpolationDelay = 100; // ms
     this.lastProcessedTimestamp = 0;
     this.pendingInputs = [];
+    this.inputSequenceNumber = 0;
+    this.serverUpdateRate = 1000 / 60; // 60Hz server update rate
   }
 
   connect() {
@@ -46,31 +48,67 @@ export class NetworkManager {
     // Update other players
     data.players.forEach(playerData => {
       if (playerData.id !== this.socket.id) {
-        this.game.updateOtherPlayer(playerData);
+        // Create state object with timestamp
+        const newState = {
+          ...playerData,
+          timestamp: data.timestamp
+        };
+        
+        const otherPlayer = this.game.otherPlayers.get(playerData.id);
+        if (!otherPlayer) {
+          // Create new player if it doesn't exist
+          const newPlayer = new Player(
+            this.game.app,
+            this.game.wallManager,
+            true,
+            playerData.x,
+            playerData.y,
+            this.game.worldContainer,
+            playerData.color
+          );
+          newPlayer.previousState = newState;
+          newPlayer.targetState = null;
+          this.game.otherPlayers.set(playerData.id, newPlayer);
+        } else {
+          // Update existing player's state buffer
+          if (!otherPlayer.previousState) {
+            otherPlayer.previousState = newState;
+          } else if (!otherPlayer.targetState) {
+            otherPlayer.targetState = newState;
+          } else {
+            // Shift states forward
+            otherPlayer.previousState = otherPlayer.targetState;
+            otherPlayer.targetState = newState;
+          }
+          
+          // Update non-interpolated properties
+          otherPlayer.health = playerData.health;
+          otherPlayer.isDead = playerData.isDead;
+          otherPlayer.color = playerData.color;
+          otherPlayer.isShooting = playerData.isShooting;
+          
+          if (playerData.isDead && !otherPlayer.wasDeadLastUpdate) {
+            otherPlayer.die();
+          }
+          otherPlayer.wasDeadLastUpdate = playerData.isDead;
+        }
       } else {
-        // Update our own player's position
+        // Update our own player's state
         if (this.game.player) {
-          // Only update health if it's different from current health
-          // and the server's health value is authoritative
+          // Handle authoritative health updates
           if (this.game.player.health !== playerData.health) {
             this.game.player.health = playerData.health;
             if (this.game.player.healthBar) {
-              // Ensure health bar update happens after health is set
               requestAnimationFrame(() => {
                 this.game.player.healthBar.update(playerData.health);
               });
             }
           }
+
+          // Server reconciliation
+          this.reconcileState(playerData);
           
-          // Update velocity for knockback
-          if (playerData.velocityX !== undefined && playerData.velocityY !== undefined) {
-            this.game.player.velocityX = playerData.velocityX;
-            this.game.player.velocityY = playerData.velocityY;
-          }
-          
-          this.game.player.targetX = playerData.x;
-          this.game.player.targetY = playerData.y;
-          this.game.player.targetRotation = playerData.rotation;
+          // Update other authoritative states
           this.game.player.color = playerData.color;
           
           // Handle death state change
@@ -123,6 +161,30 @@ export class NetworkManager {
     }
   }
 
+  reconcileState(serverState) {
+    // Save the last known good state from server
+    const serverX = serverState.x;
+    const serverY = serverState.y;
+    
+    // Remove old inputs that have been processed by the server
+    if (serverState.lastProcessedInput !== undefined) {
+      this.pendingInputs = this.pendingInputs.filter(input => 
+        input.sequenceNumber > serverState.lastProcessedInput
+      );
+    }
+
+    // Reset position to server state
+    this.game.player.x = serverX;
+    this.game.player.y = serverY;
+    this.game.player.velocityX = serverState.velocityX;
+    this.game.player.velocityY = serverState.velocityY;
+
+    // Reapply all pending inputs
+    this.pendingInputs.forEach(input => {
+      this.game.applyInput(input);
+    });
+  }
+
   handlePlayerDisconnected(playerId) {
     this.game.removePlayer(playerId);
   }
@@ -131,7 +193,7 @@ export class NetworkManager {
     if (this.isConnected) {
       this.socket.emit('playerInput', {
         ...input,
-        rotation: this.game.player ? this.game.player.rotation : 0
+        sequenceNumber: input.sequenceNumber
       });
     }
   }

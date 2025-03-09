@@ -228,52 +228,113 @@ export class Game {
   }
   
   setupGameLoop() {
-    this.app.ticker.add(() => {
-      if (this.player) {
-        // Update player position with interpolation
-        const alpha = 0.1; // Interpolation factor
-        this.player.x += (this.player.targetX - this.player.x) * alpha;
-        this.player.y += (this.player.targetY - this.player.y) * alpha;
-        
-        // Send input to server
-        this.networkManager.sendInput({
+    this.app.ticker.add((t) => {
+      if (this.player && !this.player.isDead) {
+        const deltaTime = t.deltaTime;
+
+        // Store current input state
+        const currentInput = {
           left: this.keys.ArrowLeft || this.keys.a,
           right: this.keys.ArrowRight || this.keys.d,
           up: this.keys.ArrowUp || this.keys.w,
           down: this.keys.ArrowDown || this.keys.s,
-          rotation: this.player.rotation
-        });
-        
-        // Only update camera position if not animating
+          rotation: this.player.rotation,
+          deltaTime: deltaTime,
+          sequenceNumber: this.networkManager.inputSequenceNumber++
+        };
+
+        // Apply prediction locally
+        this.applyInput(currentInput);
+
+        // Send input to server
+        this.networkManager.sendInput(currentInput);
+
+        // Store input for reconciliation
+        this.networkManager.pendingInputs.push(currentInput);
+
+        // Update camera position logic remains the same
         if (!this.isCameraAnimating) {
-          // Update world container position to keep player centered
           const screenCenterX = this.app.screen.width / 2;
           const screenCenterY = this.app.screen.height / 2;
-          
-          // Calculate the world container position that will center the player
           this.worldContainer.x = screenCenterX - (this.player.x * this.gameScale) - this.app.stage.position.x;
           this.worldContainer.y = screenCenterY - (this.player.y * this.gameScale) - this.app.stage.position.y;
         }
-        
+
         // Update view mask position
         if (this.viewMask) {
           this.viewMask.x = this.player.x;
           this.viewMask.y = this.player.y;
         }
       }
-      
-      // Update other players' positions with interpolation
+
+      // Update other players' positions
       this.updateOtherPlayers();
     });
   }
   
+  applyInput(input) {
+    // Calculate acceleration based on input
+    let ax = 0;
+    let ay = 0;
+    
+    if (input.left) ax -= this.player.acceleration;
+    if (input.right) ax += this.player.acceleration;
+    if (input.up) ay -= this.player.acceleration;
+    if (input.down) ay += this.player.acceleration;
+    
+    // Apply acceleration to velocity
+    this.player.velocityX += ax * input.deltaTime;
+    this.player.velocityY += ay * input.deltaTime;
+    
+    // Apply friction
+    const frictionFactor = Math.pow(this.player.friction, input.deltaTime);
+    this.player.velocityX *= frictionFactor;
+    this.player.velocityY *= frictionFactor;
+
+    // Limit speed
+    const speed = Math.sqrt(this.player.velocityX ** 2 + this.player.velocityY ** 2);
+    if (speed > this.player.maxSpeed) {
+        const scale = this.player.maxSpeed / speed;
+        this.player.velocityX *= scale;
+        this.player.velocityY *= scale;
+    }
+
+    // Update position
+    this.player.x += this.player.velocityX * input.deltaTime;
+    this.player.y += this.player.velocityY * input.deltaTime;
+  }
+  
   updateOtherPlayers() {
+    const now = Date.now();
+    
     this.otherPlayers.forEach((otherPlayer, id) => {
-      if (otherPlayer.targetX !== undefined) {
-        // Interpolate position only
-        const alpha = 0.1; // Interpolation factor
-        otherPlayer.x += (otherPlayer.targetX - otherPlayer.x) * alpha;
-        otherPlayer.y += (otherPlayer.targetY - otherPlayer.y) * alpha;
+      if (otherPlayer.previousState && otherPlayer.targetState) {
+        // Calculate interpolation alpha based on timestamps
+        const timeElapsed = now - otherPlayer.previousState.timestamp;
+        const timeBetweenStates = otherPlayer.targetState.timestamp - otherPlayer.previousState.timestamp;
+        let alpha = timeElapsed / timeBetweenStates;
+        
+        // Clamp alpha between 0 and 1
+        alpha = Math.max(0, Math.min(1, alpha));
+        
+        // Interpolate position
+        otherPlayer.x = otherPlayer.previousState.x + (otherPlayer.targetState.x - otherPlayer.previousState.x) * alpha;
+        otherPlayer.y = otherPlayer.previousState.y + (otherPlayer.targetState.y - otherPlayer.previousState.y) * alpha;
+        
+        // Interpolate rotation
+        const shortestAngle = ((((otherPlayer.targetState.rotation - otherPlayer.previousState.rotation) % (2 * Math.PI)) + (3 * Math.PI)) % (2 * Math.PI)) - Math.PI;
+        otherPlayer.rotation = otherPlayer.previousState.rotation + shortestAngle * alpha;
+        
+        // Update turret rotation
+        if (otherPlayer.turret) {
+          otherPlayer.turret.graphics.rotation = otherPlayer.rotation;
+        }
+        
+        // If we've reached or passed the target state, make it the previous state
+        if (alpha >= 1) {
+          otherPlayer.previousState = otherPlayer.targetState;
+          otherPlayer.targetState = null;
+        }
       }
     });
   }

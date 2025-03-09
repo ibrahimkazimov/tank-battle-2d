@@ -49,10 +49,10 @@ const gameState = {
 // Game constants (moved from client)
 const GAME_CONSTANTS = {
   PLAYER_RADIUS: 20,
-  PLAYER_SPEED: 4.0,
+  PLAYER_SPEED: 2.5,
   PLAYER_MAX_HEALTH: 100,
   BULLET_RADIUS: 5,
-  BULLET_SPEED: 7.5,
+  BULLET_SPEED: 15,
   BULLET_DAMAGE: 20,
   BULLET_POWER: 0.5,
   BULLET_HEALTH: 40,
@@ -63,10 +63,10 @@ const GAME_CONSTANTS = {
   TICK_RATE: 60,
   INTERPOLATION_DELAY: 100,
   COLORS: {
-    PLAYER1: '#4287f5',
-    PLAYER2: '#f542f5',
-    PLAYER3: '#42f554',
-    PLAYER4: '#f542f5'
+    PLAYER1: '#1BB4D6',
+    PLAYER2: '#BE7FF4',
+    PLAYER3: '#F04E52',
+    PLAYER4: '#04E16D'
   }
 };
 

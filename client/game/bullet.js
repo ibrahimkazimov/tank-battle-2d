@@ -18,7 +18,7 @@ export class BulletManager {
   
   createBullet(x, y, rotation, sourcePlayer) {
     const bullet = new PIXI.Graphics();
-    bullet.context.fillStyle = BULLET_COLOR;
+    bullet.context.fillStyle = sourcePlayer.color;
     bullet.context.circle(0, 0, BULLET_RADIUS);
     bullet.context.fill();
     

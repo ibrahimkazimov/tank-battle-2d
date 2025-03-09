@@ -18,11 +18,13 @@ export const BULLET_COOLDOWN = 500; // 0.5 seconds in milliseconds
 // Colors
 export const BULLET_COLOR = "#FF0000";
 export const PLAYER_COLOR = "#3355FF";
-export const TURRET_COLOR = "#222222";
+export const TURRET_COLOR = "#9B989A";
 export const BACKGROUND_COLOR = "#EEEEEE";
 export const WALL_COLOR = "#555555";
 export const FLAG_COLOR = "#FF5500";
 export const FLAG_SIZE = 15;
+export const STROKE_COLOR = '#5D5D60';
+export const STROKE_WIDTH = 2;
 
 // Player Constants
 export const PLAYER_MAX_HEALTH = 100;

@@ -1,8 +1,9 @@
 import { PLAYER_COLOR, PLAYER_MAX_HEALTH, WIDTH, HEIGHT } from '../constants.js';
 
 export class HealthBar {
-  constructor(app) {
+  constructor(app, color) {
     this.app = app;
+    this.color = color;
     this.width = 400;
     this.height = 10;
     this.borderWidth = 2;
@@ -30,7 +31,7 @@ export class HealthBar {
     
     // Health bar
     this.healthBar = new PIXI.Graphics();
-    this.healthBar.context.fillStyle = PLAYER_COLOR;
+    this.healthBar.context.fillStyle = this.color;
     this.drawRoundedRect(this.healthBar.context, this.borderWidth, this.borderWidth, 
                         this.width - this.borderWidth * 2, 
                         this.height - this.borderWidth * 2, 
@@ -97,7 +98,7 @@ export class HealthBar {
   update(health) {
     const healthPercent = health / PLAYER_MAX_HEALTH;
     this.healthBar.context.clear();
-    this.healthBar.context.fillStyle = PLAYER_COLOR;
+    this.healthBar.context.fillStyle = this.color;
     this.drawRoundedRect(this.healthBar.context, 
                         this.borderWidth, 
                         this.borderWidth, 

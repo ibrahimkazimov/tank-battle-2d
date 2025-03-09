@@ -1,4 +1,4 @@
-import { TURRET_WIDTH, TURRET_HEIGHT, TURRET_COLOR, WIDTH, HEIGHT, BULLET_COOLDOWN, PLAYER_COLOR, PLAYER2_COLOR } from '../constants.js';
+import { TURRET_WIDTH, TURRET_HEIGHT, TURRET_COLOR, WIDTH, HEIGHT, BULLET_COOLDOWN, PLAYER_COLOR, PLAYER2_COLOR, STROKE_COLOR, STROKE_WIDTH } from '../constants.js';
 
 export class Turret {
   constructor(app, isAI, worldContainer, color) {
@@ -29,6 +29,7 @@ export class Turret {
     turret.context.fillStyle = this.color;
     turret.context.rect(0, -this.width/2, this.length, this.width);
     turret.context.fill();
+    turret.context.stroke({ color: STROKE_COLOR, width: STROKE_WIDTH })
     
     // Set the pivot point to the center of rotation
     turret.pivot.set(0, 0);

@@ -1,4 +1,4 @@
-import { PLAYER_RADIUS, PLAYER_COLOR, PLAYER_SPEED, WIDTH, HEIGHT, PLAYER_MAX_HEALTH, RESPAWN_TIME, PLAYER2_COLOR } from '../constants.js';
+import { PLAYER_RADIUS, PLAYER_COLOR, PLAYER_SPEED, WIDTH, HEIGHT, PLAYER_MAX_HEALTH, RESPAWN_TIME, PLAYER2_COLOR, TURRET_COLOR, STROKE_COLOR, STROKE_WIDTH } from '../constants.js';
 import { Turret } from './turret.js';
 import { checkCollision, getDistance, checkCircleRectCollision } from '../utils/collision.js';
 import { HealthBar } from './healthBar.js';
@@ -17,20 +17,21 @@ export class Player {
     this.respawnTimer = null;
     this.explosionParticles = [];
     this.color = color;
+    this.turretColor = TURRET_COLOR
     this.name = '';
     
     // Store reference to game instance
     this.game = app.game;
     
     // Create turret first so it's behind the player
-    this.turret = new Turret(app, isAI, worldContainer, color);
+    this.turret = new Turret(app, isAI, worldContainer, this.turretColor);
     this.turret.setPlayer(this); // Set player reference in turret
     
     this.graphics = this.createGraphics();
     
     // Create health bar for main player only
     if (!this.isAI) {
-      this.healthBar = new HealthBar(app);
+      this.healthBar = new HealthBar(app, color);
       // Ensure health bar shows full health initially
       this.healthBar.update(PLAYER_MAX_HEALTH);
       this.healthBar.setName(this.name);
@@ -71,21 +72,23 @@ export class Player {
     body.context.fillStyle = this.color;
     body.context.circle(0, 0, PLAYER_RADIUS);
     body.context.fill();
+    body.context.stroke({ color: STROKE_COLOR, width: STROKE_WIDTH })
     this.bodyContainer.addChild(body);
     
     // Create name text only for other players (not for local player)
     if (this.isAI) {
-      this.nameText = new PIXI.Text(this.name || '', {
-        fontFamily: 'Arial',
-        fontSize: 16,
-        fill: '#ffffff',
-        align: 'center',
-        stroke: '#000000',
-        strokeThickness: 4,
-        dropShadow: true,
-        dropShadowColor: '#000000',
-        dropShadowBlur: 4,
-        dropShadowDistance: 2
+      this.nameText = new PIXI.Text({
+        text: this.name || '',
+        style: {
+          fontFamily: 'Arial',
+          fontSize: 16,
+          fill: '#ffffff',
+          align: 'center',
+          dropShadow: true,
+          dropShadowColor: '#000000',
+          dropShadowBlur: 4,
+          dropShadowDistance: 2
+        }
       });
       this.nameText.anchor.set(0.5);
       this.nameText.y = -PLAYER_RADIUS - 25;

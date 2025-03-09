@@ -73,15 +73,18 @@ export class Player {
     
     // Create name text only for other players
     if (this.isAI) {
-      this.nameText = new PIXI.Text('', {
-        fontFamily: 'Arial',
-        fontSize: 16,
-        fill: '#ffffff',
-        align: 'center',
-        dropShadow: true,
-        dropShadowColor: '#000000',
-        dropShadowBlur: 4,
-        dropShadowDistance: 2
+      this.nameText = new PIXI.Text({
+        text: '',
+        style: {
+          fontFamily: 'Arial',
+          fontSize: 16,
+          fill: '#ffffff',
+          align: 'center',
+          dropShadow: true,
+          dropShadowColor: '#000000',
+          dropShadowBlur: 4,
+          dropShadowDistance: 2
+        }
       });
       this.nameText.anchor.set(0.5);
       this.nameText.y = -40; // Position above tank

@@ -37,6 +37,83 @@ export class NetworkManager {
     this.socket.on('playerDisconnected', (playerId) => {
       this.handlePlayerDisconnected(playerId);
     });
+
+    this.socket.on('playerRespawned', (respawnData) => {
+      this.handlePlayerRespawn(respawnData);
+    });
+
+    this.socket.on('playerDied', (deathData) => {
+      this.handlePlayerDeath(deathData);
+    });
+  }
+
+  handlePlayerDeath(deathData) {
+    const otherPlayer = this.game.otherPlayers.get(deathData.playerId);
+    if (otherPlayer) {
+      otherPlayer.isDead = true;
+      otherPlayer.isVisible = false;
+      otherPlayer.x = deathData.x;
+      otherPlayer.y = deathData.y;
+      
+      // Immediately hide graphics
+      if (otherPlayer.graphics) {
+        otherPlayer.graphics.visible = false;
+      }
+      if (otherPlayer.turret && otherPlayer.turret.graphics) {
+        otherPlayer.turret.graphics.visible = false;
+      }
+      
+      // Create death effect
+      otherPlayer.createExplosion();
+    }
+  }
+
+  handlePlayerRespawn(respawnData) {
+    if (respawnData.playerId === this.socket.id) {
+      // This is our player respawning
+      if (this.game.player) {
+        this.game.player.x = respawnData.x;
+        this.game.player.y = respawnData.y;
+        this.game.player.health = respawnData.health;
+        this.game.player.isDead = false;
+        this.game.player.isVisible = true;
+        
+        // Make graphics visible
+        if (this.game.player.graphics) {
+          this.game.player.graphics.visible = true;
+        }
+        if (this.game.player.turret && this.game.player.turret.graphics) {
+          this.game.player.turret.graphics.visible = true;
+        }
+        
+        // Clear any death effects
+        this.game.player.clearExplosionParticles();
+        
+        // Animate camera to new position
+        this.game.animateCameraToPosition(respawnData.x, respawnData.y);
+      }
+    } else {
+      // Other player respawning
+      const otherPlayer = this.game.otherPlayers.get(respawnData.playerId);
+      if (otherPlayer) {
+        otherPlayer.x = respawnData.x;
+        otherPlayer.y = respawnData.y;
+        otherPlayer.health = respawnData.health;
+        otherPlayer.isDead = false;
+        otherPlayer.isVisible = respawnData.isVisible;
+        
+        // Make graphics visible
+        if (otherPlayer.graphics) {
+          otherPlayer.graphics.visible = respawnData.isVisible;
+        }
+        if (otherPlayer.turret && otherPlayer.turret.graphics) {
+          otherPlayer.turret.graphics.visible = respawnData.isVisible;
+        }
+        
+        // Clear any death effects
+        otherPlayer.clearExplosionParticles();
+      }
+    }
   }
 
   handleGameState(data) {
@@ -68,6 +145,13 @@ export class NetworkManager {
           );
           newPlayer.previousState = newState;
           newPlayer.targetState = null;
+          newPlayer.isVisible = playerData.isVisible;
+          if (newPlayer.graphics) {
+            newPlayer.graphics.visible = playerData.isVisible;
+          }
+          if (newPlayer.turret && newPlayer.turret.graphics) {
+            newPlayer.turret.graphics.visible = playerData.isVisible;
+          }
           this.game.otherPlayers.set(playerData.id, newPlayer);
         } else {
           // Update existing player's state buffer
@@ -86,6 +170,15 @@ export class NetworkManager {
           otherPlayer.isDead = playerData.isDead;
           otherPlayer.color = playerData.color;
           otherPlayer.isShooting = playerData.isShooting;
+          otherPlayer.isVisible = playerData.isVisible;
+          
+          // Update visibility
+          if (otherPlayer.graphics) {
+            otherPlayer.graphics.visible = playerData.isVisible;
+          }
+          if (otherPlayer.turret && otherPlayer.turret.graphics) {
+            otherPlayer.turret.graphics.visible = playerData.isVisible;
+          }
           
           if (playerData.isDead && !otherPlayer.wasDeadLastUpdate) {
             otherPlayer.die();

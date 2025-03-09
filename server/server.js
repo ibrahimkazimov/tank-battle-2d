@@ -252,7 +252,16 @@ const physics = {
         player.health -= GAME_CONSTANTS.BULLET_DAMAGE;
         if (player.health <= 0) {
           player.isDead = true;
+          player.isVisible = false;
           player.deathPosition = { x: player.x, y: player.y };
+          
+          // Immediately broadcast death state to all clients
+          io.emit('playerDied', {
+            playerId: playerId,
+            x: player.x,
+            y: player.y,
+            deathPosition: player.deathPosition
+          });
         }
         
         return true;
@@ -359,7 +368,8 @@ io.on('connection', (socket) => {
     color: playerColor,
     isShooting: false,
     lastShotTime: 0,
-    lastProcessedInput: null
+    lastProcessedInput: null,
+    isVisible: true
   };
   
   gameState.players.set(socket.id, player);
@@ -413,12 +423,25 @@ io.on('connection', (socket) => {
       player.velocityX = 0;
       player.velocityY = 0;
       player.rotation = 0;
+      player.isVisible = true;
 
-      // Send immediate update to the respawning player with spawn position
-      socket.emit('gameState', {
-        players: Array.from(gameState.players.values()),
+      // Broadcast immediate respawn state to ALL clients
+      io.emit('playerRespawned', {
+        playerId: socket.id,
+        x: spawnPos.x,
+        y: spawnPos.y,
+        health: GAME_CONSTANTS.PLAYER_MAX_HEALTH,
+        isVisible: true
+      });
+
+      // Also send in next game state update
+      io.emit('gameState', {
+        players: Array.from(gameState.players.values()).map(p => ({
+          ...p,
+          lastProcessedInput: p.lastProcessedInput,
+          isVisible: p.isVisible
+        })),
         bullets: gameState.bullets,
-        spawnPosition: spawnPos,
         timestamp: Date.now()
       });
     }

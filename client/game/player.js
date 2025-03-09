@@ -55,6 +55,8 @@ export class Player {
     // Set initial rotation
     this.rotation = 0;
     this.turret.rotation = 0;
+    
+    this.isVisible = true;
   }
   
   createGraphics() {
@@ -261,12 +263,15 @@ export class Player {
   
   die() {
     this.isDead = true;
+    this.isVisible = false;
     this.health = 0;
     this.velocityX = 0;
     this.velocityY = 0;
     
     // Hide player and turret graphics
-    this.graphics.visible = false;
+    if (this.graphics) {
+      this.graphics.visible = false;
+    }
     if (this.turret && this.turret.graphics) {
       this.turret.graphics.visible = false;
     }
@@ -287,6 +292,7 @@ export class Player {
     }
     
     this.isDead = false;
+    this.isVisible = true;
     this.health = PLAYER_MAX_HEALTH;
     this.velocityX = 0;
     this.velocityY = 0;
@@ -304,7 +310,9 @@ export class Player {
     this.explosionParticles = [];
 
     // Make graphics visible again
-    this.graphics.visible = true;
+    if (this.graphics) {
+      this.graphics.visible = true;
+    }
     if (this.turret && this.turret.graphics) {
       this.turret.graphics.visible = true;
     }

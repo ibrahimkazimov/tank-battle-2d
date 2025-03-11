@@ -457,14 +457,14 @@ io.on('connection', (socket) => {
         return; // Too soon to shoot again
       }
 
+      // Set shooting state
+      player.isShooting = true;
+      player.lastShotTime = now;
+      
       const turretLength = 30;
       
       const bulletX = data.x + Math.cos(data.rotation) * turretLength;
       const bulletY = data.y + Math.sin(data.rotation) * turretLength;
-      
-      // Set shooting state
-      player.isShooting = true;
-      player.lastShotTime = now;
       
       const bullet = {
         id: Date.now(),
@@ -481,6 +481,13 @@ io.on('connection', (socket) => {
         timestamp: Date.now()
       };
       gameState.bullets.push(bullet);
+
+      // Reset shooting state after a short delay
+      setTimeout(() => {
+        if (player) {
+          player.isShooting = false;
+        }
+      }, 100); // Reset after 100ms
     }
   });
   

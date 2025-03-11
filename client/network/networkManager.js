@@ -172,7 +172,14 @@ export class NetworkManager {
           otherPlayer.health = playerData.health;
           otherPlayer.isDead = playerData.isDead;
           otherPlayer.color = playerData.color;
+          
+          // Handle shooting state
+          if (playerData.isShooting && !otherPlayer.isShooting) {
+            otherPlayer.isShooting = true;
+            otherPlayer.turret.startRecoil();
+          }
           otherPlayer.isShooting = playerData.isShooting;
+          
           otherPlayer.isVisible = playerData.isVisible;
           
           // Update visibility
@@ -302,7 +309,8 @@ export class NetworkManager {
         x: this.game.player.x,
         y: this.game.player.y,
         velocityX: this.game.player.velocityX,
-        velocityY: this.game.player.velocityY
+        velocityY: this.game.player.velocityY,
+        isShooting: true
       });
     }
   }

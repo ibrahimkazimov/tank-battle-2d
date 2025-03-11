@@ -1,9 +1,8 @@
 import { STROKE_COLOR, STROKE_WIDTH } from '../constants.js';
 
 export class Turret {
-  constructor(app, isAI, worldContainer, color) {
+  constructor(app, { worldContainer, color }) {
     this.app = app;
-    this.isAI = isAI;
     this.worldContainer = worldContainer;
     this.color = color;
     this.length = 30;

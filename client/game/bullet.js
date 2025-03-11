@@ -32,7 +32,6 @@ export class BulletManager {
     bullet.vx = Math.cos(rotation) * BULLET_SPEED;
     bullet.vy = Math.sin(rotation) * BULLET_SPEED;
     bullet.sourcePlayer = sourcePlayer;
-    bullet.isAIBullet = sourcePlayer.isAI;
     
     return bullet;
   }

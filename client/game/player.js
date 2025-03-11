@@ -4,11 +4,11 @@ import { checkCircleRectCollision } from '../utils/collision.js';
 import { HealthBar } from './healthBar.js';
 
 export class Player {
-  constructor(app, wallManager, isAI = false, spawnX = 0, spawnY = 0, worldContainer = null, color = '#4287f5') {
+  constructor(app, {wallManager, isMainPlayer = true, spawnX = 0, spawnY = 0, worldContainer = null, color = '#4287f5'}) {
     this.app = app;
     this.wallManager = wallManager;
     this.radius = PLAYER_RADIUS;
-    this.isAI = isAI;
+    this.isMainPlayer = isMainPlayer;
     this.spawnX = spawnX;
     this.spawnY = spawnY;
     this.worldContainer = worldContainer;
@@ -24,13 +24,13 @@ export class Player {
     this.game = app.game;
     
     // Create turret first so it's behind the player
-    this.turret = new Turret(app, isAI, worldContainer, this.turretColor);
+    this.turret = new Turret(app, { worldContainer, color: this.turretColor });
     this.turret.setPlayer(this); // Set player reference in turret
     
     this.graphics = this.createGraphics();
     
     // Create health bar for main player only
-    if (!this.isAI) {
+    if (this.isMainPlayer) {
       this.healthBar = new HealthBar(app, color);
       // Ensure health bar shows full health initially
       this.healthBar.update(PLAYER_MAX_HEALTH);
@@ -76,7 +76,7 @@ export class Player {
     this.bodyContainer.addChild(body);
     
     // Create name text only for other players (not for local player)
-    if (this.isAI) {
+    if (!this.isMainPlayer) {
       this.nameText = new PIXI.Text({
         text: this.name || '',
         style: {
@@ -234,7 +234,7 @@ export class Player {
     }
     
     // For local player, update rotation instantly
-    if (!this.isAI) {
+    if (this.isMainPlayer) {
       this._rotation = angle;
       this.graphics.rotation = angle;
       this.turret.graphics.rotation = angle;
@@ -258,7 +258,7 @@ export class Player {
     if (this.isDead) return;
     
     // Only update health bar if we're the main player
-    if (!this.isAI && this.healthBar) {
+    if (this.isMainPlayer && this.healthBar) {
       this.healthBar.update(this.health);
     }
     
@@ -289,14 +289,14 @@ export class Player {
     this.createExplosion();
     
     // Start respawn timer only for local player
-    if (!this.isAI) {
+    if (this.isMainPlayer) {
       this.respawnTimer = setTimeout(() => this.respawn(), RESPAWN_TIME);
     }
   }
   
   respawn() {
     // Notify server about respawn
-    if (!this.isAI) {
+    if (this.isMainPlayer) {
       this.app.game.networkManager.sendRespawn();
     }
     
@@ -310,7 +310,7 @@ export class Player {
     this._rotation = 0;
     
     // Update health bar
-    if (!this.isAI && this.healthBar) {
+    if (this.isMainPlayer && this.healthBar) {
       this.healthBar.update(this.health);
     }
     
@@ -330,7 +330,7 @@ export class Player {
     }
 
     // For AI players, update position immediately
-    if (this.isAI) {
+    if (!this.isMainPlayer) {
       this.x = this.spawnX;
       this.y = this.spawnY;
       this.targetX = this.spawnX;
@@ -514,7 +514,7 @@ export class Player {
     this.spawnX = x;
     this.spawnY = y;
     
-    if (!this.isAI) {
+    if (this.isMainPlayer) {
       // Update position immediately to prevent flicker
       this.x = x;
       this.y = y;
@@ -554,7 +554,7 @@ export class Player {
   setName(name) {
     this.name = name;
     // Update floating name text only for other players
-    if (this.isAI && this.nameText) {
+    if (!this.isMainPlayer && this.nameText) {
       this.nameText.text = name;
       this.nameText.visible = true;
       
@@ -562,7 +562,7 @@ export class Player {
       this.nameText.rotation = -this.rotation;
     }
     // Update health bar name for main player
-    if (!this.isAI && this.healthBar) {
+    if (this.isMainPlayer && this.healthBar) {
       this.healthBar?.setName(name);
     }
   }

@@ -136,12 +136,14 @@ export class NetworkManager {
           // Create new player if it doesn't exist
           const newPlayer = new Player(
             this.game.app,
-            this.game.wallManager,
-            true,
-            playerData.x,
-            playerData.y,
-            this.game.worldContainer,
-            playerData.color
+            {
+              wallManager: this.game.wallManager,
+              worldContainer: this.game.worldContainer,
+              color: playerData.color,
+              isMainPlayer: false,
+              spawnX: playerData.x,
+              spawnY: playerData.y
+            }
           );
           newPlayer.previousState = newState;
           newPlayer.targetState = null;
@@ -248,12 +250,14 @@ export class NetworkManager {
         // Create player at spawn position with server-assigned color
         this.game.player = new Player(
           this.game.app,
-          this.game.wallManager,
-          false,
-          data.spawnPosition.x,
-          data.spawnPosition.y,
-          this.game.worldContainer,
-          playerData.color
+          {
+            wallManager: this.game.wallManager,
+            worldContainer: this.game.worldContainer,
+            color: playerData.color,
+            isMainPlayer: true,
+            spawnX: data.spawnPosition.x,
+            spawnY: data.spawnPosition.y
+          }
         );
         // Set player name immediately
         this.game.player.setName(this.game.playerName);

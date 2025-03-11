@@ -1,4 +1,4 @@
-import { PLAYER_COLOR, PLAYER_MAX_HEALTH, WIDTH, HEIGHT } from '../constants.js';
+import { PLAYER_MAX_HEALTH } from '../constants.js';
 
 export class HealthBar {
   constructor(app, color) {

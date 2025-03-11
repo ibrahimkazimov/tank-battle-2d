@@ -1,4 +1,4 @@
-import { TURRET_WIDTH, TURRET_HEIGHT, TURRET_COLOR, WIDTH, HEIGHT, BULLET_COOLDOWN, PLAYER_COLOR, PLAYER2_COLOR, STROKE_COLOR, STROKE_WIDTH } from '../constants.js';
+import { STROKE_COLOR, STROKE_WIDTH } from '../constants.js';
 
 export class Turret {
   constructor(app, isAI, worldContainer, color) {

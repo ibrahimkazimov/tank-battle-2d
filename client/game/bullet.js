@@ -1,4 +1,4 @@
-import { BULLET_RADIUS, BULLET_COLOR, BULLET_SPEED, WIDTH, HEIGHT, BULLET_DAMAGE, TURRET_HEIGHT, BULLET_FORCE } from '../constants.js';
+import { BULLET_RADIUS, BULLET_SPEED, WIDTH, HEIGHT, BULLET_DAMAGE, BULLET_FORCE } from '../constants.js';
 import { checkCollision, getDistance } from '../utils/collision.js';
 
 export class BulletManager {

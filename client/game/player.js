@@ -1,6 +1,6 @@
-import { PLAYER_RADIUS, PLAYER_COLOR, PLAYER_SPEED, WIDTH, HEIGHT, PLAYER_MAX_HEALTH, RESPAWN_TIME, PLAYER2_COLOR, TURRET_COLOR, STROKE_COLOR, STROKE_WIDTH } from '../constants.js';
+import { PLAYER_RADIUS, PLAYER_SPEED, WIDTH, HEIGHT, PLAYER_MAX_HEALTH, RESPAWN_TIME, TURRET_COLOR, STROKE_COLOR, STROKE_WIDTH } from '../constants.js';
 import { Turret } from './turret.js';
-import { checkCollision, getDistance, checkCircleRectCollision } from '../utils/collision.js';
+import { checkCircleRectCollision } from '../utils/collision.js';
 import { HealthBar } from './healthBar.js';
 
 export class Player {

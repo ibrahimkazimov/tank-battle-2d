@@ -1,8 +1,7 @@
-import { Player } from './player.js';
 import { WallManager } from './wall.js';
 import { BulletManager } from './bullet.js';
 import { NetworkManager } from '../network/networkManager.js';
-import { WIDTH, HEIGHT, BACKGROUND_COLOR, PLAYER2_SHOOT_INTERVAL, VIEW_DISTANCE, MIN_ZOOM, MAX_ZOOM } from '../constants.js';
+import { WIDTH, HEIGHT, BACKGROUND_COLOR, VIEW_DISTANCE, MIN_ZOOM, MAX_ZOOM } from '../constants.js';
 
 export class Game {
   constructor() {
@@ -218,25 +217,6 @@ export class Game {
     });
   }
   
-  startAIBehavior() {
-    // AI shooting interval
-    setInterval(() => {
-      if (!this.player.isDead) {
-        // Calculate angle to player
-        const dx = this.player.x - this.player.x;
-        const dy = this.player.y - this.player.y;
-        const rotation = Math.atan2(dy, dx);
-        
-        // Update AI turret rotation
-        this.player.turret.rotation = rotation;
-        
-        // Fire bullet
-        const turretPos = this.player.getTurretPosition();
-        this.bulletManager.createBullet(turretPos.x, turretPos.y, rotation, this.player);
-      }
-    }, PLAYER2_SHOOT_INTERVAL);
-  }
-  
   setupGameLoop() {
     this.app.ticker.add((t) => {
       if (this.player && !this.player.isDead) {
@@ -364,68 +344,6 @@ export class Game {
     });
   }
   
-  updateOtherPlayer(serverPlayer) {
-    let otherPlayer = this.otherPlayers.get(serverPlayer.id);
-    
-    if (!otherPlayer) {
-      // Create new player if it doesn't exist
-      otherPlayer = new Player(
-        this.app,
-        this.wallManager,
-        true,
-        serverPlayer.x,
-        serverPlayer.y,
-        this.worldContainer,
-        serverPlayer.color
-      );
-      this.otherPlayers.set(serverPlayer.id, otherPlayer);
-    }
-    
-    // Update player name
-    otherPlayer.setName(serverPlayer.name);
-    
-    // Update target position for interpolation
-    otherPlayer.targetX = serverPlayer.x;
-    otherPlayer.targetY = serverPlayer.y;
-    
-    // Update rotation instantly without interpolation
-    if (serverPlayer.rotation !== undefined) {
-      otherPlayer.rotation = serverPlayer.rotation;
-    }
-    
-    // Handle shooting state if provided
-    if (serverPlayer.isShooting && !otherPlayer.turret.isRecoiling) {
-      otherPlayer.turret.startRecoil();
-    }
-    
-    // Update health and handle death/respawn state changes
-    otherPlayer.health = serverPlayer.health;
-    if (serverPlayer.isDead !== otherPlayer.isDead) {
-      otherPlayer.isDead = serverPlayer.isDead;
-      if (serverPlayer.isDead) {
-        otherPlayer.die();
-      } else {
-        // Handle respawn
-        otherPlayer.graphics.visible = true;
-        if (otherPlayer.turret && otherPlayer.turret.graphics) {
-          otherPlayer.turret.graphics.visible = true;
-        }
-        otherPlayer.x = serverPlayer.x;
-        otherPlayer.y = serverPlayer.y;
-        otherPlayer.clearExplosionParticles();
-      }
-    }
-    
-    otherPlayer.color = serverPlayer.color;
-  }
-  
-  updateBullets(serverBullets) {
-    // Update each bullet from the server
-    serverBullets.forEach(serverBullet => {
-      this.bulletManager.updateBullet(serverBullet);
-    });
-  }
-  
   removePlayer(playerId) {
     const otherPlayer = this.otherPlayers.get(playerId);
     if (otherPlayer) {
@@ -486,10 +404,5 @@ export class Game {
   destroy() {
     this.player.destroy();
     this.app.destroy();
-  }
-  
-  // Add method to find safe spawn position
-  findSafeSpawnPosition() {
-    return this.wallManager.findSafeSpawnPosition(PLAYER_RADIUS);
   }
 }

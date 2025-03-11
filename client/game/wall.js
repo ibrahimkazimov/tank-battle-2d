@@ -74,34 +74,5 @@ export class WallManager {
     }
     return false;
   }
-  
-  // Find a safe spawn position within the outer walls
-  findSafeSpawnPosition(radius) {
-    const maxAttempts = 100;
-    const outerWalls = this.walls.slice(0, 4); // First 4 walls are outer walls
-    
-    if (outerWalls.length < 4) return { x: 0, y: 0 }; // Fallback to center
-    
-    // Calculate bounds from outer walls
-    const bounds = {
-      left: outerWalls[2].x + radius,
-      right: outerWalls[3].x - radius,
-      top: outerWalls[0].y + radius,
-      bottom: outerWalls[1].y - radius
-    };
-    
-    for (let i = 0; i < maxAttempts; i++) {
-      // Generate random position within bounds
-      const x = bounds.left + Math.random() * (bounds.right - bounds.left);
-      const y = bounds.top + Math.random() * (bounds.bottom - bounds.top);
-      
-      // Check if position is clear of walls
-      if (!this.checkPointCollision(x, y, radius)) {
-        return { x, y };
-      }
-    }
-    
-    // If no position found, return center position
-    return { x: 0, y: 0 };
-  }
+
 }

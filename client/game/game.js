@@ -37,7 +37,8 @@ export class Game {
       ArrowRight: false,
       ArrowUp: false,
       ArrowDown: false,
-      F: false
+      F: false,
+      E: false  // Add E key tracking
     };
     
     this.arrowMap = {
@@ -51,10 +52,15 @@ export class Game {
       ArrowRight: "ArrowRight",
       f: "F",
       F: "F",
+      e: "E",  // Add E key mapping
+      E: "E"
     };
     
     // Add camera control flag
     this.isCameraAnimating = false;
+    
+    // Add auto-fire state
+    this.isAutoFiring = false;
   }
   
   calculateScale() {
@@ -198,6 +204,12 @@ export class Game {
       if (this.arrowMap.hasOwnProperty(event.key)) {
         const mappedKey = this.arrowMap[event.key];
         this.keys[mappedKey] = true;
+
+        // Toggle auto-fire when E is pressed
+        if (mappedKey === "E" && !event.repeat) {  // !event.repeat prevents toggle on key hold
+          this.isAutoFiring = !this.isAutoFiring;
+          console.log("Auto-fire:", this.isAutoFiring ? "Enabled" : "Disabled");
+        }
       }
     });
     
@@ -231,6 +243,21 @@ export class Game {
     this.app.ticker.add((t) => {
       if (this.player && !this.player.isDead) {
         const deltaTime = t.deltaTime;
+
+        // Handle auto-firing
+        if (this.isAutoFiring && this.player && !this.player.isDead) {
+          const now = Date.now();
+          // Check if enough time has passed since last shot
+          if (now - this.lastShotTime >= 250) { // Match server's FIRE_RATE
+            this.lastShotTime = now;
+            // Get the current rotation of the player's turret
+            const rotation = this.player.rotation;
+            // Send shoot event to server
+            this.networkManager.sendShoot(rotation);
+            // Start recoil animation
+            this.player.turret.startRecoil();
+          }
+        }
 
         // Store current input state
         const currentInput = {

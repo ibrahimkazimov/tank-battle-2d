@@ -1,6 +1,5 @@
 import { Player } from './player.js';
 import { WallManager } from './wall.js';
-import { Flag } from './flag.js';
 import { BulletManager } from './bullet.js';
 import { NetworkManager } from '../network/networkManager.js';
 import { WIDTH, HEIGHT, BACKGROUND_COLOR, PLAYER2_SHOOT_INTERVAL, VIEW_DISTANCE, MIN_ZOOM, MAX_ZOOM } from '../constants.js';
@@ -12,7 +11,6 @@ export class Game {
     this.otherPlayers = new Map();
     this.wallManager = null;
     this.bulletManager = null;
-    this.flag = null;
     this.worldContainer = null;
     this.gameScale = 1;
     this.logicalWidth = WIDTH;

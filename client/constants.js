@@ -21,8 +21,6 @@ export const PLAYER_COLOR = "#3355FF";
 export const TURRET_COLOR = "#9B989A";
 export const BACKGROUND_COLOR = "#EEEEEE";
 export const WALL_COLOR = "#555555";
-export const FLAG_COLOR = "#FF5500";
-export const FLAG_SIZE = 15;
 export const STROKE_COLOR = '#5D5D60';
 export const STROKE_WIDTH = 2;
 

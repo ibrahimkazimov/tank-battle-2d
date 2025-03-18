@@ -54,6 +54,9 @@ export class NetworkManager {
       otherPlayer.isVisible = false;
       otherPlayer.x = deathData.x;
       otherPlayer.y = deathData.y;
+
+      // TODO: add a message like "Player X was killed by Player Y"
+      console.log(`Player ${otherPlayer.name} was killed by Player ${deathData.killerName}`);
       
       // Immediately hide graphics
       if (otherPlayer.graphics) {
@@ -151,7 +154,9 @@ export class NetworkManager {
               bulletRadius: playerData.bulletRadius,
               bulletSpeed: playerData.bulletSpeed,
               bulletDamage: playerData.bulletDamage,
-              bulletPower: playerData.bulletPower
+              bulletPower: playerData.bulletPower,
+              kills: playerData.kills,
+              deaths: playerData.deaths
             }
           );
           newPlayer.previousState = newState;
@@ -183,6 +188,8 @@ export class NetworkManager {
           otherPlayer.health = playerData.health;
           otherPlayer.isDead = playerData.isDead;
           otherPlayer.color = playerData.color;
+          otherPlayer.kills = playerData.kills;
+          otherPlayer.deaths = playerData.deaths;
           
           // Handle shooting state
           if (playerData.isShooting && !otherPlayer.isShooting) {
@@ -224,6 +231,8 @@ export class NetworkManager {
           
           // Update other authoritative states
           this.game.player.color = playerData.color;
+          this.game.player.kills = playerData.kills;
+          this.game.player.deaths = playerData.deaths;
           
           // Handle death state change
           if (playerData.isDead !== this.game.player.isDead) {
@@ -274,7 +283,9 @@ export class NetworkManager {
             bulletRadius: playerData.bulletRadius,
             bulletSpeed: playerData.bulletSpeed,
             bulletDamage: playerData.bulletDamage,
-            bulletPower: playerData.bulletPower
+            bulletPower: playerData.bulletPower,
+            kills: playerData.kills,
+            deaths: playerData.deaths
           }
         );
         // Set player name immediately

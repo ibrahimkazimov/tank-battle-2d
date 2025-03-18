@@ -255,13 +255,22 @@ const physics = {
           player.isDead = true;
           player.isVisible = false;
           player.deathPosition = { x: player.x, y: player.y };
+          player.deaths += 1;
           
+          // Update killer's score
+          const killer = gameState.players.get(bullet.sourceId);
+          if (killer) {
+            killer.kills += 1;
+          }
+
           // Immediately broadcast death state to all clients
           io.emit('playerDied', {
             playerId: playerId,
             x: player.x,
             y: player.y,
-            deathPosition: player.deathPosition
+            deathPosition: player.deathPosition,
+            killerName: killer ? killer.name : 'Unknown',
+            killerKills: killer ? killer.kills : 0
           });
         }
         
@@ -376,7 +385,9 @@ io.on('connection', (socket) => {
     isShooting: false,
     lastShotTime: 0,
     lastProcessedInput: null,
-    isVisible: true
+    isVisible: true,
+    kills: 0,
+    deaths: 0
   };
   
   gameState.players.set(socket.id, player);

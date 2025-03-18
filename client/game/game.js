@@ -1,6 +1,7 @@
 import { WallManager } from './wall.js';
 import { BulletManager } from './bullet.js';
 import { NetworkManager } from '../network/networkManager.js';
+import { Scoreboard } from './scoreboard.js';
 import { WIDTH, HEIGHT, BACKGROUND_COLOR, VIEW_DISTANCE, MIN_ZOOM, MAX_ZOOM } from '../constants.js';
 
 export class Game {
@@ -15,6 +16,7 @@ export class Game {
     this.logicalWidth = WIDTH;
     this.logicalHeight = HEIGHT;
     this.networkManager = null;
+    this.scoreboard = null;
     
     // Add fire rate tracking
     this.lastShotTime = 0;
@@ -35,7 +37,8 @@ export class Game {
       ArrowUp: false,
       ArrowDown: false,
       F: false,
-      E: false  // Add E key tracking
+      E: false,  // Add E key tracking
+      Tab: false // Add Tab key tracking
     };
     
     this.arrowMap = {
@@ -49,8 +52,9 @@ export class Game {
       ArrowRight: "ArrowRight",
       f: "F",
       F: "F",
-      e: "E",  // Add E key mapping
-      E: "E"
+      e: "E",
+      E: "E",
+      Tab: "Tab"
     };
     
     // Add camera control flag
@@ -161,6 +165,9 @@ export class Game {
     
     // Start game loop
     this.setupGameLoop();
+    
+    // Initialize scoreboard
+    this.scoreboard = new Scoreboard(this.app);
   }
   
   setupEventListeners() {
@@ -203,16 +210,28 @@ export class Game {
         this.keys[mappedKey] = true;
 
         // Toggle auto-fire when E is pressed
-        if (mappedKey === "E" && !event.repeat) {  // !event.repeat prevents toggle on key hold
+        if (mappedKey === "E" && !event.repeat) {
           this.isAutoFiring = !this.isAutoFiring;
           console.log("Auto-fire:", this.isAutoFiring ? "Enabled" : "Disabled");
+        }
+
+        // Show scoreboard when Tab is pressed
+        if (mappedKey === "Tab") {
+          event.preventDefault(); // Prevent Tab from changing focus
+          this.scoreboard.show();
         }
       }
     });
     
     window.addEventListener("keyup", (event) => {
       if (this.arrowMap.hasOwnProperty(event.key)) {
-        this.keys[this.arrowMap[event.key]] = false;
+        const mappedKey = this.arrowMap[event.key];
+        this.keys[mappedKey] = false;
+
+        // Hide scoreboard when Tab is released
+        if (mappedKey === "Tab") {
+          this.scoreboard.hide();
+        }
       }
     });
   }
@@ -274,6 +293,16 @@ export class Game {
 
       // Update other players' positions
       this.updateOtherPlayers();
+
+      // Update scoreboard
+      if (this.scoreboard && this.scoreboard.visible) {
+        // Create a combined array of all players including the local player
+        const allPlayers = new Map(this.otherPlayers);
+        if (this.player) {
+          allPlayers.set(this.networkManager.socket.id, this.player);
+        }
+        this.scoreboard.update(allPlayers);
+      }
     });
   }
   

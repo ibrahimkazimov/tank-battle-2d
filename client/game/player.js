@@ -19,7 +19,9 @@ export class Player {
     bulletRadius = 5,
     bulletSpeed = 5,
     bulletDamage = 1,
-    bulletPower = 1
+    bulletPower = 1,
+    kills = 0,
+    deaths = 0
   }) {
     this.app = app;
     this.wallManager = wallManager;
@@ -43,6 +45,10 @@ export class Player {
     this.bulletSpeed = bulletSpeed;
     this.bulletDamage = bulletDamage;
     this.bulletPower = bulletPower;
+    this.kills = kills;
+    this.deaths = deaths;
+
+    
     // Store reference to game instance
     this.game = app.game;
     

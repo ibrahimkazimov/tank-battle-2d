@@ -1,9 +1,8 @@
-import { PLAYER_MAX_HEALTH } from '../constants.js';
-
 export class HealthBar {
-  constructor(app, color) {
+  constructor(app, {color, maxHealth}) {
     this.app = app;
     this.color = color;
+    this.maxHealth = maxHealth;
     this.width = 400;
     this.height = 10;
     this.borderWidth = 2;
@@ -96,7 +95,7 @@ export class HealthBar {
   }
   
   update(health) {
-    const healthPercent = health / PLAYER_MAX_HEALTH;
+    const healthPercent = health / this.maxHealth;
     this.healthBar.context.clear();
     this.healthBar.context.fillStyle = this.color;
     this.drawRoundedRect(this.healthBar.context, 

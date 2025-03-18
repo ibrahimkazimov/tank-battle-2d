@@ -151,7 +151,7 @@ export class Game {
     this.networkManager.connect();
     
     // Initialize bullet manager
-    this.bulletManager = new BulletManager(this.app, this.wallManager, this.worldContainer);
+    this.bulletManager = new BulletManager(this.app, {wallManager: this.wallManager, worldContainer: this.worldContainer });
     
     // Create view mask
     this.updateViewMask();
@@ -182,7 +182,7 @@ export class Game {
       if (this.player && !this.player.isDead) {
         const now = Date.now();
         // Check if enough time has passed since last shot
-        if (now - this.lastShotTime < 250) { // Match server's FIRE_RATE
+        if (now - this.lastShotTime < this.player.fireRate) { // Match server's FIRE_RATE
           return; // Too soon to shoot again
         }
         
@@ -226,7 +226,7 @@ export class Game {
         if (this.isAutoFiring && this.player && !this.player.isDead) {
           const now = Date.now();
           // Check if enough time has passed since last shot
-          if (now - this.lastShotTime >= 250) { // Match server's FIRE_RATE
+          if (now - this.lastShotTime >= this.player.fireRate) { // Match server's FIRE_RATE
             this.lastShotTime = now;
             // Get the current rotation of the player's turret
             const rotation = this.player.rotation;

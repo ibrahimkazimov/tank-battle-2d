@@ -1,25 +1,48 @@
-import { PLAYER_RADIUS, PLAYER_SPEED, WIDTH, HEIGHT, PLAYER_MAX_HEALTH, RESPAWN_TIME, TURRET_COLOR, STROKE_COLOR, STROKE_WIDTH } from '../constants.js';
+import { WIDTH, HEIGHT, TURRET_COLOR, STROKE_COLOR, STROKE_WIDTH } from '../constants.js';
 import { Turret } from './turret.js';
 import { checkCircleRectCollision } from '../utils/collision.js';
 import { HealthBar } from './healthBar.js';
 
 export class Player {
-  constructor(app, {wallManager, isMainPlayer = true, spawnX = 0, spawnY = 0, worldContainer = null, color = '#4287f5'}) {
+  constructor(app, {
+    wallManager, 
+    isMainPlayer = true, 
+    spawnX = 0, 
+    spawnY = 0, 
+    worldContainer = null, 
+    color = '#4287f5', 
+    fireRate = 250, 
+    health = 100, 
+    maxSpeed = 2.5, 
+    radius = 20,
+    respawnTime = 3000,
+    bulletRadius = 5,
+    bulletSpeed = 5,
+    bulletDamage = 1,
+    bulletPower = 1
+  }) {
     this.app = app;
     this.wallManager = wallManager;
-    this.radius = PLAYER_RADIUS;
+    this.radius = radius;
     this.isMainPlayer = isMainPlayer;
     this.spawnX = spawnX;
     this.spawnY = spawnY;
     this.worldContainer = worldContainer;
-    this.health = PLAYER_MAX_HEALTH;
+    this.health = health;
+    this.maxHealth = health;
     this.isDead = false;
     this.respawnTimer = null;
+    this.respawnTime = respawnTime;
     this.explosionParticles = [];
     this.color = color;
-    this.turretColor = TURRET_COLOR
+    this.turretColor = TURRET_COLOR;
+    this.fireRate = fireRate;
+    this.maxSpeed = maxSpeed;
     this.name = '';
-    
+    this.bulletRadius = bulletRadius;
+    this.bulletSpeed = bulletSpeed;
+    this.bulletDamage = bulletDamage;
+    this.bulletPower = bulletPower;
     // Store reference to game instance
     this.game = app.game;
     
@@ -31,9 +54,9 @@ export class Player {
     
     // Create health bar for main player only
     if (this.isMainPlayer) {
-      this.healthBar = new HealthBar(app, color);
+      this.healthBar = new HealthBar(app, {color, maxHealth: this.maxHealth});
       // Ensure health bar shows full health initially
-      this.healthBar.update(PLAYER_MAX_HEALTH);
+      this.healthBar.update(this.health);
       this.healthBar.setName(this.name);
     }
     
@@ -46,7 +69,6 @@ export class Player {
     this.velocityY = 0;
     this.acceleration = 0.5;
     this.friction = 0.95;
-    this.maxSpeed = PLAYER_SPEED * 2;
     
     // Network interpolation properties
     this.targetX = spawnX;
@@ -70,7 +92,7 @@ export class Player {
     // Create tank body
     const body = new PIXI.Graphics();
     body.context.fillStyle = this.color;
-    body.context.circle(0, 0, PLAYER_RADIUS);
+    body.context.circle(0, 0, this.radius);
     body.context.fill();
     body.context.stroke({ color: STROKE_COLOR, width: STROKE_WIDTH })
     this.bodyContainer.addChild(body);
@@ -91,7 +113,7 @@ export class Player {
         }
       });
       this.nameText.anchor.set(0.5);
-      this.nameText.y = -PLAYER_RADIUS - 25;
+      this.nameText.y = -this.radius - 25;
       player.addChild(this.nameText);
       
       // Ensure name is visible
@@ -290,7 +312,7 @@ export class Player {
     
     // Start respawn timer only for local player
     if (this.isMainPlayer) {
-      this.respawnTimer = setTimeout(() => this.respawn(), RESPAWN_TIME);
+      this.respawnTimer = setTimeout(() => this.respawn(), this.respawnTime);
     }
   }
   
@@ -302,7 +324,7 @@ export class Player {
     
     this.isDead = false;
     this.isVisible = true;
-    this.health = PLAYER_MAX_HEALTH;
+    this.health = this.maxHealth;
     this.velocityX = 0;
     this.velocityY = 0;
     
@@ -378,7 +400,7 @@ export class Player {
     const playerCircle = {
       x: newX,
       y: newY,
-      radius: PLAYER_RADIUS
+      radius: this.radius
     };
 
     for (const wall of this.wallManager.getWalls()) {

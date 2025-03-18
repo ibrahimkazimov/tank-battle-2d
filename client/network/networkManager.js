@@ -142,7 +142,16 @@ export class NetworkManager {
               color: playerData.color,
               isMainPlayer: false,
               spawnX: playerData.x,
-              spawnY: playerData.y
+              spawnY: playerData.y,
+              fireRate: playerData.fireRate,
+              health: playerData.health,
+              maxSpeed: playerData.maxSpeed,
+              radius: playerData.radius,
+              respawnTime: playerData.respawnTime,
+              bulletRadius: playerData.bulletRadius,
+              bulletSpeed: playerData.bulletSpeed,
+              bulletDamage: playerData.bulletDamage,
+              bulletPower: playerData.bulletPower
             }
           );
           newPlayer.previousState = newState;
@@ -256,7 +265,16 @@ export class NetworkManager {
             color: playerData.color,
             isMainPlayer: true,
             spawnX: data.spawnPosition.x,
-            spawnY: data.spawnPosition.y
+            spawnY: data.spawnPosition.y,
+            fireRate: playerData.fireRate,
+            health: playerData.health,
+            maxSpeed: playerData.maxSpeed,
+            radius: playerData.radius,
+            respawnTime: playerData.respawnTime,
+            bulletRadius: playerData.bulletRadius,
+            bulletSpeed: playerData.bulletSpeed,
+            bulletDamage: playerData.bulletDamage,
+            bulletPower: playerData.bulletPower
           }
         );
         // Set player name immediately

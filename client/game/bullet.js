@@ -1,8 +1,8 @@
-import { BULLET_RADIUS, BULLET_SPEED, WIDTH, HEIGHT, BULLET_DAMAGE, BULLET_FORCE } from '../constants.js';
+import { WIDTH, HEIGHT } from '../constants.js';
 import { checkCollision, getDistance } from '../utils/collision.js';
 
 export class BulletManager {
-  constructor(app, wallManager, worldContainer) {
+  constructor(app, {wallManager, worldContainer}) {
     this.app = app;
     this.wallManager = wallManager;
     this.bullets = new Map(); // Use Map to track bullets by ID
@@ -19,7 +19,7 @@ export class BulletManager {
   createBullet(x, y, rotation, sourcePlayer) {
     const bullet = new PIXI.Graphics();
     bullet.context.fillStyle = sourcePlayer.color;
-    bullet.context.circle(0, 0, BULLET_RADIUS);
+    bullet.context.circle(0, 0, sourcePlayer.bulletRadius);
     bullet.context.fill();
     
     // Add bullet to world container
@@ -29,8 +29,8 @@ export class BulletManager {
     bullet.x = x;
     bullet.y = y;
     bullet.rotation = rotation;
-    bullet.vx = Math.cos(rotation) * BULLET_SPEED;
-    bullet.vy = Math.sin(rotation) * BULLET_SPEED;
+    bullet.vx = Math.cos(rotation) * sourcePlayer.bulletSpeed;
+    bullet.vy = Math.sin(rotation) * sourcePlayer.bulletSpeed;
     bullet.sourcePlayer = sourcePlayer;
     
     return bullet;
@@ -85,17 +85,17 @@ export class BulletManager {
       bullet.x = serverBullet.x;
       bullet.y = serverBullet.y;
       bullet.rotation = serverBullet.rotation;
-      bullet.vx = Math.cos(serverBullet.rotation) * BULLET_SPEED;
-      bullet.vy = Math.sin(serverBullet.rotation) * BULLET_SPEED;
+      bullet.vx = Math.cos(serverBullet.rotation) * bullet.sourcePlayer.bulletSpeed;
+      bullet.vy = Math.sin(serverBullet.rotation) * bullet.sourcePlayer.bulletSpeed;
     }
   }
   
   checkBulletWallCollision(bullet) {
     const bulletBounds = {
-      x: bullet.x - BULLET_RADIUS,
-      y: bullet.y - BULLET_RADIUS,
-      width: BULLET_RADIUS * 2,
-      height: BULLET_RADIUS * 2,
+      x: bullet.x - bullet.sourcePlayer.bulletRadius,
+      y: bullet.y - bullet.sourcePlayer.bulletRadius,
+      width: bullet.sourcePlayer.bulletRadius * 2,
+      height: bullet.sourcePlayer.bulletRadius * 2,
     };
 
     for (const wall of this.wallManager.getWalls()) {
@@ -119,19 +119,18 @@ export class BulletManager {
       // Calculate distance between bullet and player
       const distance = getDistance(bullet.x, bullet.y, player.x, player.y);
       
-      if (distance < BULLET_RADIUS + player.radius) {
+      if (distance < bullet.sourcePlayer.bulletRadius + player.radius) {
         // Apply damage
-        player.takeDamage(BULLET_DAMAGE);
+        player.takeDamage(bullet.sourcePlayer.bulletDamage);
         
         // Calculate force direction based on bullet's velocity
-        const bulletSpeed = Math.sqrt(bullet.vx * bullet.vx + bullet.vy * bullet.vy);
         let forceX = bullet.vx;
         let forceY = bullet.vy;
         
         // Normalize and scale the force
-        const length = Math.sqrt(forceX * forceX + forceY * forceY);
-        forceX = (forceX / length) * BULLET_FORCE;
-        forceY = (forceY / length) * BULLET_FORCE;
+        const length = Math.sqrt(forceX ** 2 + forceY ** 2);
+        forceX = (forceX / length) * bullet.sourcePlayer.bulletPower;
+        forceY = (forceY / length) * bullet.sourcePlayer.bulletPower;
         
         // Apply force
         player.applyForce(forceX, forceY);

@@ -268,7 +268,8 @@ export class Game {
         };
 
         // Apply prediction locally
-        this.applyInput(currentInput);
+        // TODO: test this
+        //this.applyInput(currentInput);
 
         // Send input to server
         this.networkManager.sendInput(currentInput);

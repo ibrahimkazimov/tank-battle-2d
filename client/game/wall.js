@@ -55,24 +55,5 @@ export class WallManager {
       this.createWall(wallData.x, wallData.y, wallData.width, wallData.height);
     });
   }
-  
-  // Helper function to check if a point collides with any wall
-  checkPointCollision(x, y, radius) {
-    for (const wall of this.walls) {
-      const wallLeft = wall.x;
-      const wallRight = wall.x + wall.width;
-      const wallTop = wall.y;
-      const wallBottom = wall.y + wall.height;
-      
-      // Check if point (with radius) intersects with wall
-      if (x + radius > wallLeft && 
-          x - radius < wallRight &&
-          y + radius > wallTop && 
-          y - radius < wallBottom) {
-        return true;
-      }
-    }
-    return false;
-  }
 
 }

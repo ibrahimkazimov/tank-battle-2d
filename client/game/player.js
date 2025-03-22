@@ -1,6 +1,5 @@
-import { WIDTH, HEIGHT, TURRET_COLOR, STROKE_COLOR, STROKE_WIDTH } from '../constants.js';
+import { TURRET_COLOR, STROKE_COLOR, STROKE_WIDTH } from '../constants.js';
 import { Turret } from './turret.js';
-import { checkCircleRectCollision } from '../utils/collision.js';
 import { HealthBar } from './healthBar.js';
 
 export class Player {
@@ -184,68 +183,6 @@ export class Player {
     }
   }
   
-  update(keys) {
-    if (this.isDead) return;
-    
-    // Calculate acceleration based on input
-    let ax = 0;
-    let ay = 0;
-    
-    if (keys.ArrowLeft) ax -= this.acceleration;
-    if (keys.ArrowRight) ax += this.acceleration;
-    if (keys.ArrowUp) ay -= this.acceleration;
-    if (keys.ArrowDown) ay += this.acceleration;
-    
-    // Apply acceleration to velocity
-    this.velocityX += ax;
-    this.velocityY += ay;
-    
-    // Apply friction
-    this.velocityX *= this.friction;
-    this.velocityY *= this.friction;
-    
-    // Limit speed
-    const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
-    if (speed > this.maxSpeed) {
-      const scale = this.maxSpeed / speed;
-      this.velocityX *= scale;
-      this.velocityY *= scale;
-    }
-    
-    // Calculate new position in world coordinates
-    const newX = this.x + this.velocityX;
-    const newY = this.y + this.velocityY;
-    
-    // Check for collisions before updating position
-    if (!this.checkWallCollision(newX, newY)) {
-      this.x = newX;
-      this.y = newY;
-    } else {
-      // Try moving only horizontally
-      const horizontalX = this.x + this.velocityX;
-      const horizontalY = this.y;
-      if (!this.checkWallCollision(horizontalX, horizontalY)) {
-        this.x = horizontalX;
-      } else {
-        // Stop horizontal velocity on collision
-        this.velocityX *= -0.5; // Add some bounce effect
-      }
-      
-      // Try moving only vertically
-      const verticalX = this.x;
-      const verticalY = this.y + this.velocityY;
-      if (!this.checkWallCollision(verticalX, verticalY)) {
-        this.y = verticalY;
-      } else {
-        // Stop vertical velocity on collision
-        this.velocityY *= -0.5; // Add some bounce effect
-      }
-    }
-    
-    // Enforce world boundaries
-    this.enforceWorldBoundaries();
-  }
-  
   updateTurretRotation(mouseX, mouseY) {
     if (this.isDead) return;
     
@@ -280,19 +217,6 @@ export class Player {
       y: this.graphics.y + Math.sin(this.rotation) * turretLength,
       rotation: this.rotation
     };
-  }
-  
-  takeDamage(amount) {
-    if (this.isDead) return;
-    
-    // Only update health bar if we're the main player
-    if (this.isMainPlayer && this.healthBar) {
-      this.healthBar.update(this.health);
-    }
-    
-    if (this.health <= 0) {
-      this.die();
-    }
   }
   
   die() {
@@ -374,20 +298,7 @@ export class Player {
     }
     // For the main player, position will be updated when server sends spawn position
   }
-  
-  applyForce(forceX, forceY) {
-    if (this.isDead) return;
-    
-    this.velocityX += forceX;
-    this.velocityY += forceY;
-    
-    const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
-    if (speed > this.maxSpeed) {
-      const scale = this.maxSpeed / speed;
-      this.velocityX *= scale;
-      this.velocityY *= scale;
-    }
-  }
+
   
   destroy() {
     if (this.respawnTimer) {
@@ -399,70 +310,6 @@ export class Player {
     }
     this.graphics.destroy();
     this.turret.destroy();
-  }
-  
-  checkWallCollision(newX, newY) {
-    // Create circle object for the player in world coordinates
-    const playerCircle = {
-      x: newX,
-      y: newY,
-      radius: this.radius
-    };
-
-    for (const wall of this.wallManager.getWalls()) {
-      const wallRect = {
-        x: wall.graphics.x,
-        y: wall.graphics.y,
-        width: wall.graphics.width,
-        height: wall.graphics.height
-      };
-
-      if (checkCircleRectCollision(playerCircle, wallRect)) {
-        // Calculate wall normal (perpendicular to wall surface)
-        const isVerticalWall = wallRect.width < wallRect.height;
-        const normalX = isVerticalWall ? 1 : 0;
-        const normalY = isVerticalWall ? 0 : 1;
-
-        // Calculate dot product of velocity and normal
-        const dotProduct = this.velocityX * normalX + this.velocityY * normalY;
-
-        // If moving towards the wall
-        if (dotProduct < 0) {
-          // Project velocity onto the wall plane
-          this.velocityX = this.velocityX - dotProduct * normalX;
-          this.velocityY = this.velocityY - dotProduct * normalY;
-        }
-
-        return true;
-      }
-    }
-    return false;
-  }
-
-  enforceWorldBoundaries() {
-    const WORLD_BOUNDS = {
-      left: -WIDTH,
-      right: WIDTH,
-      top: -HEIGHT,
-      bottom: HEIGHT
-    };
-
-    if (this.x < WORLD_BOUNDS.left) {
-      this.x = WORLD_BOUNDS.left;
-      this.velocityX = 0;  // Stop horizontal movement at boundary
-    }
-    if (this.x > WORLD_BOUNDS.right) {
-      this.x = WORLD_BOUNDS.right;
-      this.velocityX = 0;  // Stop horizontal movement at boundary
-    }
-    if (this.y < WORLD_BOUNDS.top) {
-      this.y = WORLD_BOUNDS.top;
-      this.velocityY = 0;  // Stop vertical movement at boundary
-    }
-    if (this.y > WORLD_BOUNDS.bottom) {
-      this.y = WORLD_BOUNDS.bottom;
-      this.velocityY = 0;  // Stop vertical movement at boundary
-    }
   }
 
   createExplosion() {
@@ -559,23 +406,6 @@ export class Player {
       
       // Animate camera to new position
       this.app.game.animateCameraToPosition(x, y);
-    }
-  }
-
-  // Add method to apply knockback
-  applyKnockback(directionX, directionY, power) {
-    if (this.isDead) return;
-    
-    // Apply knockback force as velocity change
-    this.velocityX += directionX * power;
-    this.velocityY += directionY * power;
-    
-    // Ensure velocity doesn't exceed max speed
-    const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
-    if (speed > this.maxSpeed) {
-      const scale = this.maxSpeed / speed;
-      this.velocityX *= scale;
-      this.velocityY *= scale;
     }
   }
 

@@ -11,9 +11,6 @@ export class BulletManager {
     // All bullets now go in the world container
     this.bulletContainer = new PIXI.Container();
     this.worldContainer.addChild(this.bulletContainer);
-    
-    // Add a ticker to update bullet collisions
-    this.app.ticker.add(this.updateBulletCollisions.bind(this));
   }
   
   createBullet(x, y, rotation, sourcePlayer) {
@@ -89,86 +86,7 @@ export class BulletManager {
       bullet.vy = Math.sin(serverBullet.rotation) * bullet.sourcePlayer.bulletSpeed;
     }
   }
-  
-  checkBulletWallCollision(bullet) {
-    const bulletBounds = {
-      x: bullet.x - bullet.sourcePlayer.bulletRadius,
-      y: bullet.y - bullet.sourcePlayer.bulletRadius,
-      width: bullet.sourcePlayer.bulletRadius * 2,
-      height: bullet.sourcePlayer.bulletRadius * 2,
-    };
 
-    for (const wall of this.wallManager.getWalls()) {
-      if (checkCollision(bulletBounds, wall)) {
-        this.destroyBullet(bullet.id);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  checkBulletPlayerCollision(bullet) {
-    // Check collision with each player
-    const players = [this.app.game.player, ...Array.from(this.app.game.otherPlayers.values())];
-    
-    for (const player of players) {
-      // Skip if player is dead
-      if (player.isDead) continue;
-
-
-      // Calculate distance between bullet and player
-      const distance = getDistance(bullet.x, bullet.y, player.x, player.y);
-      
-      if (distance < bullet.sourcePlayer.bulletRadius + player.radius) {
-        // Apply damage
-        player.takeDamage(bullet.sourcePlayer.bulletDamage);
-        
-        // Calculate force direction based on bullet's velocity
-        let forceX = bullet.vx;
-        let forceY = bullet.vy;
-        
-        // Normalize and scale the force
-        const length = Math.sqrt(forceX ** 2 + forceY ** 2);
-        forceX = (forceX / length) * bullet.sourcePlayer.bulletPower;
-        forceY = (forceY / length) * bullet.sourcePlayer.bulletPower;
-        
-        // Apply force
-        player.applyForce(forceX, forceY);
-        
-        return true;
-      }
-    }
-    return false;
-  }
-
-  updateBulletCollisions() {
-    for (const [id, bullet] of this.bullets) {
-      // Update bullet position
-      bullet.x += bullet.vx;
-      bullet.y += bullet.vy;
-
-      // Check for wall collision
-      if (this.checkBulletWallCollision(bullet)) {
-        continue;
-      }
-
-      // Check for player collision
-      if (this.checkBulletPlayerCollision(bullet)) {
-        this.destroyBullet(id);
-        continue;
-      }
-
-      // Check if bullet is out of bounds
-      const screenX = bullet.x + this.worldContainer.x;
-      const screenY = bullet.y + this.worldContainer.y;
-      const buffer = WIDTH / 2;
-      
-      if (screenX < -buffer || screenX > WIDTH + buffer || 
-          screenY < -buffer || screenY > HEIGHT + buffer) {
-        this.destroyBullet(id);
-      }
-    }
-  }
 
   destroyBullet(id) {
     const bullet = this.bullets.get(id);

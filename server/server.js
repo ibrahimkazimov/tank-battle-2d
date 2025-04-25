@@ -247,8 +247,13 @@ const physics = {
         const knockbackDirX = -dx / distance;
         const knockbackDirY = -dy / distance;
         
-        player.velocityX += knockbackDirX * GAME_CONSTANTS.BULLET_POWER * GAME_CONSTANTS.BULLET_SPEED;
-        player.velocityY += knockbackDirY * GAME_CONSTANTS.BULLET_POWER * GAME_CONSTANTS.BULLET_SPEED;
+        // player.velocityX += knockbackDirX * GAME_CONSTANTS.BULLET_POWER * GAME_CONSTANTS.BULLET_SPEED;
+        // player.velocityY += knockbackDirY * GAME_CONSTANTS.BULLET_POWER * GAME_CONSTANTS.BULLET_SPEED;
+        // Apply decay to knockback (separate from friction)
+        player.knockbackX = knockbackDirX * GAME_CONSTANTS.BULLET_POWER * GAME_CONSTANTS.BULLET_SPEED;
+        player.knockbackY = knockbackDirY * GAME_CONSTANTS.BULLET_POWER * GAME_CONSTANTS.BULLET_SPEED;
+        player.knockbackTimer = 300; // milliseconds, or a few frames
+
         
         player.health -= GAME_CONSTANTS.BULLET_DAMAGE;
         if (player.health <= 0) {
@@ -387,7 +392,10 @@ io.on('connection', (socket) => {
     lastProcessedInput: null,
     isVisible: true,
     kills: 0,
-    deaths: 0
+    deaths: 0,
+    knockbackX: 0,
+    knockbackY: 0,
+    knockbackTimer: 0,
   };
   
   gameState.players.set(socket.id, player);
@@ -525,6 +533,16 @@ setInterval(() => {
   for (const [_, player] of gameState.players) {
     if (player.isShooting && currentTime - player.lastShotTime > 100) {
       player.isShooting = false;
+    }
+
+    if (player.knockbackTimer > 0) {
+      player.velocityX += player.knockbackX;
+      player.velocityY += player.knockbackY;
+  
+      player.knockbackX *= 0.9;
+      player.knockbackY *= 0.9;
+  
+      player.knockbackTimer -= TICK_INTERVAL;
     }
   }
   

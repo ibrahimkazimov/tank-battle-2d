@@ -1,5 +1,3 @@
-import { WIDTH, HEIGHT } from '../constants.js';
-import { checkCollision, getDistance } from '../utils/collision.js';
 
 export class BulletManager {
   constructor(app, {wallManager, worldContainer}) {

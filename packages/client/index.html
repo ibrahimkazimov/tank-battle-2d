@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tank Battle 2D v2</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="lobby">
+        <div class="lobby-container">
+          <h1 class="title">Tank Battle 2D</h1>
+          <div class="input-group">
+            <input type="text" id="nameInput" placeholder="Enter your name" maxlength="15" autocomplete="off" />
+            <button id="playButton" disabled>Play</button>
+          </div>
+          <div class="controls-hint">
+            <p>WASD / Arrows to Move</p>
+            <p>Mouse to Aim & Shoot</p>
+          </div>
+        </div>
+      </div>
+      <div id="gameContainer" style="display: none;"></div>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

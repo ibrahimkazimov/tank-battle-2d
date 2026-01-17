@@ -1,10 +1,11 @@
 {
-  "name": "tank-battle-2d",
-  "version": "1.0.0",
-  "description": "2D Tank Battle Game",
+  "name": "tank-battle-2d-v2",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "start": "cd server && npm start",
-    "dev": "cd server && npm run dev",
-    "install-all": "npm install && cd server && npm install"
+    "start:server": "npm run start --workspace=@tank-battle/server",
+    "dev:client": "npm run dev --workspace=@tank-battle/client"
   }
-} 
+}

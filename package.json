@@ -6,6 +6,7 @@
   ],
   "scripts": {
     "start:server": "npm run start --workspace=@tank-battle/server",
-    "dev:client": "npm run dev --workspace=@tank-battle/client"
+    "dev:client": "npm run dev --workspace=@tank-battle/client",
+    "build": "npm install && npm run build --workspace=@tank-battle/client"
   }
 }

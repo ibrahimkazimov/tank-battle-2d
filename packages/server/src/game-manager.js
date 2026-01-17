@@ -2,20 +2,29 @@ import { GAME_CONFIG, PLAYER_CONFIG, EVENTS, Physics, COLORS, BULLET_CONFIG, WOR
 import { MAP_CONFIG } from '@tank-battle/shared/src/map.js';
 
 export class GameManager {
-  constructor(io) {
+  constructor(io, sessionId) {
     this.io = io;
+    this.sessionId = sessionId;
     this.players = new Map();
     this.bullets = [];
     this.walls = MAP_CONFIG.WALLS;
     this.colorIndex = 0;
+    this.loopInterval = null;
 
     // Start game loop
     this.startGameLoop();
   }
 
+  stopGameLoop() {
+      if (this.loopInterval) clearInterval(this.loopInterval);
+  }
+
   handleConnection(socket) {
+    // Join the session room
+    socket.join(this.sessionId);
+
     const playerName = socket.handshake.query.playerName || 'Anonymous';
-    console.log('Player connected:', socket.id, 'Name:', playerName);
+    console.log(`[${this.sessionId}] Player connected:`, socket.id, 'Name:', playerName);
 
     // Assign color
     const colors = Object.values(COLORS).filter(c => typeof c === 'string' && c.startsWith('#') && c !== COLORS.TURRET && c !== COLORS.BACKGROUND && c !== COLORS.WALL && c !== COLORS.STROKE);
@@ -144,7 +153,7 @@ export class GameManager {
       player.velocityY = 0;
       player.isVisible = true;
 
-      this.io.emit(EVENTS.PLAYER_RESPAWNED, {
+      this.io.to(this.sessionId).emit(EVENTS.PLAYER_RESPAWNED, {
         playerId: socket.id,
         x: spawnPos.x,
         y: spawnPos.y,
@@ -155,9 +164,9 @@ export class GameManager {
   }
 
   handleDisconnect(socket) {
-    console.log('Player disconnected:', socket.id);
+    console.log(`[${this.sessionId}] Player disconnected:`, socket.id);
     this.players.delete(socket.id);
-    this.io.emit(EVENTS.PLAYER_DISCONNECTED, socket.id);
+    this.io.to(this.sessionId).emit(EVENTS.PLAYER_DISCONNECTED, socket.id);
   }
 
   findSafeSpawnPosition() {
@@ -194,7 +203,7 @@ export class GameManager {
   startGameLoop() {
     const TICK_INTERVAL = 1000 / GAME_CONFIG.TICK_RATE;
     
-    setInterval(() => {
+    this.loopInterval = setInterval(() => {
         const currentTime = Date.now();
 
         // 1. Process physics/movement (already mostly handled by input, but could add server-side checks or momentum)
@@ -259,7 +268,7 @@ export class GameManager {
                         const killer = this.players.get(bullet.sourceId);
                         if (killer) killer.kills++;
 
-                        this.io.emit(EVENTS.PLAYER_DIED, {
+                        this.io.to(this.sessionId).emit(EVENTS.PLAYER_DIED, {
                             playerId: player.id,
                             x: player.x,
                             y: player.y,
@@ -272,7 +281,7 @@ export class GameManager {
         }
 
         // 3. Broadcast State
-        this.io.emit(EVENTS.GAME_STATE, {
+        this.io.to(this.sessionId).emit(EVENTS.GAME_STATE, {
             players: Array.from(this.players.values()).map(p => ({
                 ...p, // sending everything for now, can optimize later
             })),

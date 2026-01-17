@@ -8,15 +8,28 @@ export class NetworkManager {
     this.inputSequenceNumber = 0;
   }
 
-  connect(playerName) {
+  connect(playerName, sessionId) {
     // In production, this should be the actual server URL.
     // For dev, Vite proxy or localhost:3000
     this.socket = io('http://localhost:3000', {
-      query: { playerName }
+      query: { 
+        playerName,
+        sessionId: sessionId || '' // Optional session ID
+      }
     });
 
     this.socket.on('connect', () => {
       console.log('Connected to server');
+    });
+
+    this.socket.on('sessionJoined', ({ sessionId }) => {
+        console.log('Joined session:', sessionId);
+        // Update URL without reloading if not already present
+        const url = new URL(window.location);
+        if (url.searchParams.get('session') !== sessionId) {
+            url.searchParams.set('session', sessionId);
+            window.history.pushState({}, '', url);
+        }
     });
 
     this.socket.on(EVENTS.GAME_STATE, (state) => {

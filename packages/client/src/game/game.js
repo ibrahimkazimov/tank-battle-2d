@@ -5,8 +5,9 @@ import { Physics } from '@tank-battle/shared';
 import { MAP_CONFIG } from '@tank-battle/shared/src/map.js';
 
 export class Game {
-  constructor(container, playerName) {
+  constructor(container, playerName, sessionId) {
     this.playerName = playerName;
+    this.sessionId = sessionId;
     this.renderer = new Renderer(container);
     this.input = new InputManager();
     this.network = new NetworkManager(this);
@@ -19,7 +20,7 @@ export class Game {
 
   async init() {
     await this.renderer.init();
-    this.network.connect(this.playerName);
+    this.network.connect(this.playerName, this.sessionId);
     
     // Start loop
     this.renderer.app.ticker.add(this.update.bind(this));

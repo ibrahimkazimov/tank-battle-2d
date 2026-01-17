@@ -1,7 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import { GameManager } from './game-manager.js';
+import { SessionManager } from './session-manager.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -12,12 +12,17 @@ const io = new Server(httpServer, {
   }
 });
 
-// Initialize game manager
-const gameManager = new GameManager(io);
+// Initialize session manager
+const sessionManager = new SessionManager(io);
 
 // Socket connection
 io.on('connection', (socket) => {
-  gameManager.handleConnection(socket);
+  sessionManager.handleConnection(socket);
+  
+  socket.on('createSession', (callback) => {
+      const sessionId = sessionManager.createSession();
+      callback({ sessionId });
+  });
 });
 
 const PORT = 3000;

@@ -14,7 +14,11 @@
           <h1 class="title">Tank Battle 2D</h1>
           <div class="input-group">
             <input type="text" id="nameInput" placeholder="Enter your name" maxlength="15" autocomplete="off" />
-            <button id="playButton" disabled>Play</button>
+            <button id="playButton" disabled>Join Game</button>
+            <button id="createPartyButton" disabled>Create Party</button>
+          </div>
+          <div id="sessionInfo" style="display: none; margin-bottom: 1rem; color: #BE7FF4;">
+              Joining Party...
           </div>
           <div class="controls-hint">
             <p>WASD / Arrows to Move</p>
@@ -23,6 +27,9 @@
         </div>
       </div>
       <div id="gameContainer" style="display: none;"></div>
+      <div id="gameUI" style="display: none; position: absolute; top: 10px; right: 10px;">
+          <button id="copyLinkButton" style="padding: 0.5rem 1rem; font-size: 0.9em;">Copy Invite Link</button>
+      </div>
     </div>
     <script type="module" src="./src/main.js"></script>
   </body>

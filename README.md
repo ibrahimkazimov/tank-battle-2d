@@ -2,7 +2,7 @@
 
 A real-time multiplayer 2D tank battle game built with modern web technologies. This version features a scalable monorepo architecture separating client, server, and shared logic.
 
-
+![game_image](./docs/img/game_image_2.png)
 ![game_image](./docs/img/game_image.png)
 
 ## Features

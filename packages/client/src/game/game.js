@@ -32,14 +32,12 @@ export class Game {
     // Mouse listener for shooting
     this.renderer.app.stage.eventMode = 'static';
     this.renderer.app.stage.hitArea = this.renderer.app.screen;
-    this.renderer.app.stage.on('pointerdown', () => {
-        if (this.localPlayer && !this.localPlayer.isDead) {
-             const mousePos = this.renderer.app.renderer.events.pointer.global;
-             const worldPos = this.renderer.screenToWorld(mousePos.x, mousePos.y);
-             const rotation = Math.atan2(worldPos.y - this.localPlayer.y, worldPos.x - this.localPlayer.x);
-             this.network.sendShoot(rotation);
-        } else if (this.localPlayer && this.localPlayer.isDead) {
-            this.network.sendRespawn();
+    this.renderer.app.stage.on('pointerdown', () => this.handleShoot());
+
+    // Space listener for shooting
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !e.repeat) {
+            this.handleShoot();
         }
     });
 
@@ -63,6 +61,17 @@ export class Game {
     });
 
     console.log('Game initialized');
+  }
+
+  handleShoot() {
+    if (this.localPlayer && !this.localPlayer.isDead) {
+         const mousePos = this.renderer.app.renderer.events.pointer.global;
+         const worldPos = this.renderer.screenToWorld(mousePos.x, mousePos.y);
+         const rotation = Math.atan2(worldPos.y - this.localPlayer.y, worldPos.x - this.localPlayer.x);
+         this.network.sendShoot(rotation);
+    } else if (this.localPlayer && this.localPlayer.isDead) {
+        this.network.sendRespawn();
+    }
   }
 
   onGameState(state) {

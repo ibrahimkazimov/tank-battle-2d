@@ -1,6 +1,9 @@
 # Tank Battle 2D
 
-A real-time multiplayer 2D tank battle game built with modern web technologies. This version (v2) features a scalable monorepo architecture separating client, server, and shared logic.
+A real-time multiplayer 2D tank battle game built with modern web technologies. This version features a scalable monorepo architecture separating client, server, and shared logic.
+
+
+![game_image](./docs/img/game_image.png)
 
 ## Features
 

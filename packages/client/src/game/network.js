@@ -1,6 +1,15 @@
 import { io } from 'socket.io-client';
 import { EVENTS } from '@tank-battle/shared';
 
+
+const isLocalhost =
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1';
+
+const SOCKET_URL = isLocalhost
+  ? 'http://localhost:3000'
+  : 'https://tank-battle-2d.onrender.com';
+
 export class NetworkManager {
   constructor(game) {
     this.game = game;
@@ -9,9 +18,7 @@ export class NetworkManager {
   }
 
   connect(playerName, sessionId) {
-    // In production, this should be the actual server URL.
-    // For dev, Vite proxy or localhost:3000
-    this.socket = io('http://localhost:3000', {
+    this.socket = io(SOCKET_URL, {
       query: { 
         playerName,
         sessionId: sessionId || '' // Optional session ID

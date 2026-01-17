@@ -1,7 +1,7 @@
 // Game Configuration
 export const GAME_CONFIG = {
-  WIDTH: 1920,
-  HEIGHT: 1080,
+  WIDTH: 1280,
+  HEIGHT: 720,
   VIEW_DISTANCE: 1200,
   MIN_ZOOM: 1.0,
   MAX_ZOOM: 2.0,

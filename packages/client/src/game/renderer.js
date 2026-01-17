@@ -24,12 +24,18 @@ export class Renderer {
 
   async init() {
     await this.app.init({
-      resizeTo: window,
+      // resizeTo: window, // We handle resizing manually for fixed aspect ratio
       backgroundColor: COLORS.BACKGROUND,
       antialias: true,
       autoDensity: true,
       resolution: window.devicePixelRatio || 1,
     });
+    
+    // Style for centering
+    this.app.canvas.style.position = 'absolute';
+    this.app.canvas.style.top = '50%';
+    this.app.canvas.style.left = '50%';
+    this.app.canvas.style.transform = 'translate(-50%, -50%)';
     
     this.container.appendChild(this.app.canvas);
     
@@ -56,23 +62,34 @@ export class Renderer {
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
 
-    // Calculate scaling logic similar to v1
-    const logicalWidth = GAME_CONFIG.WIDTH;
-    const logicalHeight = GAME_CONFIG.HEIGHT;
-    
-    const scaleX = windowWidth / logicalWidth;
-    const scaleY = windowHeight / logicalHeight;
-    let baseScale = Math.min(scaleX, scaleY);
-    
-    const viewScale = (GAME_CONFIG.VIEW_DISTANCE * 2 * 1.2) / Math.min(windowWidth, windowHeight);
-    
-    this.gameScale = Math.min(Math.max(baseScale / viewScale, GAME_CONFIG.MIN_ZOOM), GAME_CONFIG.MAX_ZOOM);
+    // Target aspect ratio
+    const targetRatio = GAME_CONFIG.WIDTH / GAME_CONFIG.HEIGHT;
+    const windowRatio = windowWidth / windowHeight;
+
+    let width, height;
+
+    if (windowRatio > targetRatio) {
+      // Window is wider than target: fit to height
+      height = windowHeight;
+      width = height * targetRatio;
+    } else {
+      // Window is taller than target: fit to width
+      width = windowWidth;
+      height = width / targetRatio;
+    }
+
+    // Resize renderer to fit the calculated dimensions
+    this.app.renderer.resize(width, height);
+
+    // Scaling factor to map game coordinates to screen coordinates
+    // We want the whole GAME_CONFIG dimensions to fit into the new renderer dimensions.
+    // So scale = newWidth / logicalWidth
+    this.gameScale = width / GAME_CONFIG.WIDTH;
     
     this.app.stage.scale.set(this.gameScale);
     
-    // Center stage (can be refined to strictly center player later)
-    this.app.stage.position.x = (windowWidth - logicalWidth * this.gameScale) / 2;
-    this.app.stage.position.y = (windowHeight - logicalHeight * this.gameScale) / 2;
+    // Reset stage position - we rely on CSS centering of the canvas + camera centering
+    this.app.stage.position.set(0, 0);
   }
 
   drawBackground() {
@@ -258,7 +275,7 @@ export class Renderer {
       const screenHeight = this.app.screen.height;
       
       this.world.pivot.set(x, y);
-      this.world.position.set(screenWidth / 2, screenHeight / 2);
+      this.world.position.set(screenWidth / 2 / this.gameScale, screenHeight / 2 / this.gameScale);
   }
 
   // Helper to convert screen to world

@@ -30,6 +30,20 @@
       <div id="gameUI" style="display: none; position: absolute; top: 10px; right: 10px;">
           <button id="copyLinkButton" style="padding: 0.5rem 1rem; font-size: 0.9em;">Copy Invite Link</button>
       </div>
+      <div id="scoreboard" style="display: none;">
+          <table>
+              <thead>
+                  <tr>
+                      <th>Name</th>
+                      <th>Kills</th>
+                      <th>Deaths</th>
+                  </tr>
+              </thead>
+              <tbody id="scoreboardBody">
+                  <!-- Rows injected by JS -->
+              </tbody>
+          </table>
+      </div>
     </div>
     <script type="module" src="./src/main.js"></script>
   </body>

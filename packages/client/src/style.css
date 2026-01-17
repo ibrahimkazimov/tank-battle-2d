@@ -107,3 +107,46 @@ button:disabled {
   width: 100%;
   height: 100%;
 }
+/* Scoreboard Overlay */
+#scoreboard {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    min-width: 400px;
+}
+
+#scoreboard table {
+    width: 100%;
+    border-collapse: collapse;
+    color: white;
+}
+
+#scoreboard th {
+    text-align: left;
+    padding: 0.5rem 1rem;
+    border-bottom: 2px solid #555;
+    color: #BE7FF4;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+#scoreboard td {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #333;
+}
+
+#scoreboard tr:last-child td {
+    border-bottom: none;
+}
+
+#scoreboard tr.local-player {
+    background: rgba(27, 180, 214, 0.2);
+    font-weight: bold;
+}

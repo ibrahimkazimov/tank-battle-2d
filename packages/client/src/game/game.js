@@ -12,6 +12,10 @@ export class Game {
     this.input = new InputManager();
     this.network = new NetworkManager(this);
     
+    this.scoreboard = document.getElementById('scoreboard');
+    this.scoreboardBody = document.getElementById('scoreboardBody');
+    this.isScoreboardVisible = false;
+
     this.gameState = null;
     this.lastTime = 0;
     
@@ -39,11 +43,54 @@ export class Game {
         }
     });
 
+
+
+    // Scoreboard Listeners
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            e.preventDefault(); // Prevent focus switching
+            this.isScoreboardVisible = true;
+            this.scoreboard.style.display = 'block';
+            this.updateScoreboard();
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 'Tab') {
+            this.isScoreboardVisible = false;
+            this.scoreboard.style.display = 'none';
+        }
+    });
+
     console.log('Game initialized');
   }
 
   onGameState(state) {
     this.gameState = state;
+    if (this.isScoreboardVisible) {
+        this.updateScoreboard();
+    }
+  }
+
+  updateScoreboard() {
+      if (!this.gameState || !this.gameState.players) return;
+      
+      const players = [...this.gameState.players].sort((a, b) => b.kills - a.kills);
+      
+      this.scoreboardBody.innerHTML = '';
+      players.forEach(p => {
+          const row = document.createElement('tr');
+          if (this.localPlayer && p.id === this.localPlayer.id) {
+              row.className = 'local-player';
+          }
+          
+          row.innerHTML = `
+              <td>${p.id === this.network.socket?.id ? '(You) ' : ''}${p.name}</td>
+              <td>${p.kills || 0}</td>
+              <td>${p.deaths || 0}</td>
+          `;
+          this.scoreboardBody.appendChild(row);
+      });
   }
 
   get localPlayer() {

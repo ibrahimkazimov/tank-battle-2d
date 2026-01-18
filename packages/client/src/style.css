@@ -2,7 +2,6 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
@@ -11,23 +10,24 @@
 body {
   margin: 0;
   padding: 0;
-  overflow: hidden;
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 #app {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
 }
 
 /* Lobby Styles */
 #lobby {
   display: flex;
   justify-content: center;
-  align-items: center;
-  height: 100%;
+  align-items: flex-start; /* Changed from center */
+  min-height: 100vh;
+  padding: 2rem 1rem; /* Added padding */
   background: radial-gradient(circle at center, #2a2a2a 0%, #1a1a1a 100%);
+  overflow-y: auto; /* Allow scrolling */
 }
 
 .lobby-container {
@@ -40,6 +40,7 @@ body {
   text-align: center;
   width: 100%;
   max-width: 400px;
+  margin: auto; /* Center horizontally while allowing vertical scroll */
 }
 
 .input-group {
@@ -195,9 +196,11 @@ button:disabled {
 .stat-fill.speed {
   background: linear-gradient(90deg, #04e16d, #1bb4d6);
 }
+
 .stat-fill.power {
   background: linear-gradient(90deg, #f04e52, #be7ff4);
 }
+
 .stat-fill.rate {
   background: linear-gradient(90deg, #f0a04e, #f04e52);
 }

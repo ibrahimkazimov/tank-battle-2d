@@ -16,11 +16,12 @@ export class NetworkManager {
     this.inputSequenceNumber = 0;
   }
 
-  connect(playerName, sessionId) {
+  connect(playerName, sessionId, tankType) {
     this.socket = io(SOCKET_URL, {
       query: {
         playerName,
         sessionId: sessionId || "", // Optional session ID
+        tankType: tankType || "standard",
       },
     });
 

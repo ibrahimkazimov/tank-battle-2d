@@ -3,9 +3,10 @@ import { InputManager } from "./input.js";
 import { NetworkManager } from "./network.js";
 
 export class Game {
-  constructor(container, playerName, sessionId) {
+  constructor(container, playerName, sessionId, tankType) {
     this.playerName = playerName;
     this.sessionId = sessionId;
+    this.tankType = tankType || "standard";
     this.renderer = new Renderer(container);
     this.input = new InputManager();
     this.network = new NetworkManager(this);
@@ -23,7 +24,7 @@ export class Game {
 
   async init() {
     await this.renderer.init();
-    this.network.connect(this.playerName, this.sessionId);
+    this.network.connect(this.playerName, this.sessionId, this.tankType);
 
     // Start loop
     this.renderer.app.ticker.add(this.update.bind(this));

@@ -8,6 +8,7 @@ import {
   COLORS,
   BULLET_CONFIG,
   WORLD_BOUNDS,
+  TANK_TYPES,
 } from "@tank-battle/shared";
 import { MAP_CONFIG } from "@tank-battle/shared/src/map.js";
 
@@ -34,24 +35,19 @@ export class GameManager {
     socket.join(this.sessionId);
 
     const playerName = socket.handshake.query.playerName || "Anonymous";
+    const tankTypeId = socket.handshake.query.tankType || "standard";
+    const tankConfig = TANK_TYPES[tankTypeId] || TANK_TYPES.standard;
+
     console.log(
       `[${this.sessionId}] Player connected:`,
       socket.id,
       "Name:",
       playerName,
+      "Tank:",
+      tankConfig.name,
     );
 
     // Assign color
-    const colors = Object.values(COLORS).filter(
-      (c) =>
-        typeof c === "string" &&
-        c.startsWith("#") &&
-        c !== COLORS.TURRET &&
-        c !== COLORS.BACKGROUND &&
-        c !== COLORS.WALL &&
-        c !== COLORS.STROKE,
-    );
-    // Or just use the player specific ones if I assume they are named PLAYER...
     const playerColors = [
       COLORS.PLAYER1,
       COLORS.PLAYER2,
@@ -63,10 +59,11 @@ export class GameManager {
 
     const spawnPos = this.findSafeSpawnPosition();
 
-    // Initialize player
+    // Initialize player with tank-specific stats
     const player = {
       id: socket.id,
       name: playerName,
+      tankType: tankTypeId,
       x: spawnPos.x,
       y: spawnPos.y,
       health: PLAYER_CONFIG.MAX_HEALTH,
@@ -74,8 +71,8 @@ export class GameManager {
       velocityY: 0,
       acceleration: PLAYER_CONFIG.ACCELERATION,
       friction: PLAYER_CONFIG.FRICTION,
-      maxSpeed: PLAYER_CONFIG.MAX_SPEED,
-      fireRate: PLAYER_CONFIG.FIRE_RATE,
+      maxSpeed: tankConfig.maxSpeed,
+      fireRate: tankConfig.fireRate,
       isDead: false,
       isShooting: false,
       lastShotTime: 0,
@@ -86,14 +83,21 @@ export class GameManager {
       knockbackX: 0,
       knockbackY: 0,
       knockbackTimer: 0,
-      // Component-based structure
+      // Tank-specific bullet config
+      bulletConfig: {
+        speed: tankConfig.bullet.speed,
+        damage: tankConfig.bullet.damage,
+        power: tankConfig.bullet.power,
+        radius: tankConfig.bullet.radius,
+      },
+      // Component-based structure with tank-specific sizes
       body: {
-        radius: BODY_CONFIG.RADIUS,
+        radius: tankConfig.body.radius,
         color: playerColor,
       },
       turret: {
-        length: TURRET_CONFIG.LENGTH,
-        width: TURRET_CONFIG.WIDTH,
+        length: tankConfig.turret.length,
+        width: tankConfig.turret.width,
         rotation: 0,
         color: COLORS.TURRET,
       },
@@ -143,7 +147,8 @@ export class GameManager {
     const player = this.players.get(socket.id);
     if (player && !player.isDead) {
       const now = Date.now();
-      if (now - player.lastShotTime < PLAYER_CONFIG.FIRE_RATE) {
+      // Use player-specific fire rate
+      if (now - player.lastShotTime < player.fireRate) {
         return;
       }
 
@@ -174,6 +179,9 @@ export class GameManager {
         return;
       }
 
+      // Use player's tank-specific bullet config
+      const bulletConfig = player.bulletConfig;
+
       const bullet = {
         id: Date.now() + Math.random(), // Ensure uniqueness
         x: bulletX,
@@ -181,11 +189,12 @@ export class GameManager {
         prevX: player.x, // Start raycast from player center for first frame safety
         prevY: player.y,
         rotation: data,
-        velocityX: Math.cos(data) * BULLET_CONFIG.SPEED,
-        velocityY: Math.sin(data) * BULLET_CONFIG.SPEED,
+        velocityX: Math.cos(data) * bulletConfig.speed,
+        velocityY: Math.sin(data) * bulletConfig.speed,
         sourceId: socket.id,
-        radius: BULLET_CONFIG.RADIUS,
-        power: BULLET_CONFIG.POWER,
+        radius: bulletConfig.radius,
+        power: bulletConfig.power,
+        damage: bulletConfig.damage,
         health: BULLET_CONFIG.HEALTH,
         destroying: false,
         timestamp: Date.now(),
@@ -331,13 +340,18 @@ export class GameManager {
             const knockbackDirX = -dx / distance;
             const knockbackDirY = -dy / distance;
 
+            // Use bullet's stored power and damage (from the shooter's tank config)
             player.knockbackX =
-              knockbackDirX * BULLET_CONFIG.POWER * BULLET_CONFIG.SPEED;
+              knockbackDirX *
+              bullet.power *
+              (bullet.velocityX || BULLET_CONFIG.SPEED);
             player.knockbackY =
-              knockbackDirY * BULLET_CONFIG.POWER * BULLET_CONFIG.SPEED;
+              knockbackDirY *
+              bullet.power *
+              (bullet.velocityY || BULLET_CONFIG.SPEED);
             player.knockbackTimer = 300;
 
-            player.health -= BULLET_CONFIG.DAMAGE;
+            player.health -= bullet.damage || BULLET_CONFIG.DAMAGE;
 
             if (player.health <= 0 && !player.isDead) {
               player.isDead = true;

@@ -43,6 +43,94 @@ export const BULLET_CONFIG = {
   FADE_SPEED: 0.8,
 };
 
+// Tank Types Configuration
+export const TANK_TYPES = {
+  standard: {
+    id: "standard",
+    name: "Standard",
+    description: "Balanced all-rounder",
+    body: {
+      radius: BODY_CONFIG.RADIUS,
+    },
+    turret: {
+      length: TURRET_CONFIG.LENGTH,
+      width: TURRET_CONFIG.WIDTH,
+    },
+    speed: PLAYER_CONFIG.SPEED,
+    maxSpeed: PLAYER_CONFIG.MAX_SPEED,
+    fireRate: PLAYER_CONFIG.FIRE_RATE,
+    bullet: {
+      speed: BULLET_CONFIG.SPEED,
+      damage: BULLET_CONFIG.DAMAGE,
+      power: BULLET_CONFIG.POWER,
+      radius: BULLET_CONFIG.RADIUS,
+    },
+  },
+  heavy: {
+    id: "heavy",
+    name: "Heavy",
+    description: "Slow but powerful",
+    body: {
+      radius: BODY_CONFIG.RADIUS * 1.3,
+    },
+    turret: {
+      length: TURRET_CONFIG.LENGTH * 1.1,
+      width: TURRET_CONFIG.WIDTH * 1.4,
+    },
+    speed: PLAYER_CONFIG.SPEED * 0.7,
+    maxSpeed: PLAYER_CONFIG.MAX_SPEED * 0.7,
+    fireRate: PLAYER_CONFIG.FIRE_RATE * 1.3,
+    bullet: {
+      speed: BULLET_CONFIG.SPEED * 0.85,
+      damage: BULLET_CONFIG.DAMAGE * 1.8,
+      power: BULLET_CONFIG.POWER * 1.5,
+      radius: BULLET_CONFIG.RADIUS * 1.3,
+    },
+  },
+  speeder: {
+    id: "speeder",
+    name: "Speeder",
+    description: "Fast and agile",
+    body: {
+      radius: BODY_CONFIG.RADIUS * 0.85,
+    },
+    turret: {
+      length: TURRET_CONFIG.LENGTH * 0.9,
+      width: TURRET_CONFIG.WIDTH * 0.8,
+    },
+    speed: PLAYER_CONFIG.SPEED * 1.5,
+    maxSpeed: PLAYER_CONFIG.MAX_SPEED * 1.5,
+    fireRate: PLAYER_CONFIG.FIRE_RATE * 0.8,
+    bullet: {
+      speed: BULLET_CONFIG.SPEED * 1.1,
+      damage: BULLET_CONFIG.DAMAGE * 0.7,
+      power: BULLET_CONFIG.POWER * 0.7,
+      radius: BULLET_CONFIG.RADIUS * 0.9,
+    },
+  },
+  sniper: {
+    id: "sniper",
+    name: "Sniper",
+    description: "Long-range precision",
+    body: {
+      radius: BODY_CONFIG.RADIUS * 0.95,
+    },
+    turret: {
+      length: TURRET_CONFIG.LENGTH * 1.6,
+      width: TURRET_CONFIG.WIDTH * 0.7,
+    },
+    speed: PLAYER_CONFIG.SPEED * 0.9,
+    maxSpeed: PLAYER_CONFIG.MAX_SPEED * 0.9,
+    fireRate: PLAYER_CONFIG.FIRE_RATE * 1.8,
+    bullet: {
+      speed: BULLET_CONFIG.SPEED * 1.5,
+      damage: BULLET_CONFIG.DAMAGE * 1.4,
+      power: BULLET_CONFIG.POWER * 1.2,
+      radius: BULLET_CONFIG.RADIUS * 0.85,
+    },
+  },
+};
+
 // Colors
 export const COLORS = {
   PLAYER1: "#1BB4D6",

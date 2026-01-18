@@ -93,6 +93,115 @@ button:disabled {
   font-size: 0.9em;
 }
 
+/* Tank Selection Styles */
+.tank-selection {
+  margin: 1.5rem 0;
+}
+
+.tank-selection h3 {
+  margin-bottom: 1rem;
+  color: #be7ff4;
+  font-weight: 600;
+}
+
+.tank-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.tank-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.tank-card:hover {
+  background: rgba(27, 180, 214, 0.15);
+  border-color: rgba(27, 180, 214, 0.5);
+  transform: translateY(-2px);
+}
+
+.tank-card.selected {
+  background: rgba(27, 180, 214, 0.25);
+  border-color: #1bb4d6;
+  box-shadow: 0 0 15px rgba(27, 180, 214, 0.3);
+}
+
+.tank-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tank-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.tank-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: white;
+}
+
+.tank-description {
+  font-size: 0.75rem;
+  color: #888;
+  margin-bottom: 0.5rem;
+}
+
+.tank-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+}
+
+.stat-label {
+  width: 45px;
+  color: #aaa;
+}
+
+.stat-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.stat-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.stat-fill.speed {
+  background: linear-gradient(90deg, #04e16d, #1bb4d6);
+}
+.stat-fill.power {
+  background: linear-gradient(90deg, #f04e52, #be7ff4);
+}
+.stat-fill.rate {
+  background: linear-gradient(90deg, #f0a04e, #f04e52);
+}
+
 #gameContainer {
   width: 100%;
   height: 100%;

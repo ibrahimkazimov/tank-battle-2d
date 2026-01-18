@@ -1,8 +1,6 @@
 import { Renderer } from "./renderer.js";
 import { InputManager } from "./input.js";
 import { NetworkManager } from "./network.js";
-import { Physics } from "@tank-battle/shared";
-import { MAP_CONFIG } from "@tank-battle/shared/src/map.js";
 
 export class Game {
   constructor(container, playerName, sessionId) {
@@ -147,11 +145,6 @@ export class Game {
 
     // Send to server
     this.network.sendInput(inputPayload);
-
-    // Client-side prediction could go here
-    // if (this.localPlayer) {
-    //    Physics.updatePlayer(this.localPlayer, inputPayload, MAP_CONFIG.WALLS);
-    // }
 
     // 2. Autofire
     if (this.isAutoFireEnabled) {

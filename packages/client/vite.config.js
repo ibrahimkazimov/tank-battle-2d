@@ -9,5 +9,13 @@ export default defineConfig({
   },
   server: {
     port: 8080,
+    watch: {
+      // Watch the shared package for changes
+      ignored: ["!**/node_modules/@tank-battle/**"],
+    },
+  },
+  optimizeDeps: {
+    // Don't pre-bundle the shared package so changes are picked up
+    exclude: ["@tank-battle/shared"],
   },
 });

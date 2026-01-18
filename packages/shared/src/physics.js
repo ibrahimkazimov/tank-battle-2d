@@ -126,18 +126,35 @@ export const Physics = {
     }
   },
 
-  checkBulletCollisions(bullet, players, walls, bullets = []) {
+  checkBulletCollisions(bullet, players, walls, quadtree = null) {
     const bulletRadius = BULLET_CONFIG.RADIUS;
 
     if (bullet.destroying) return false;
 
-    // Bullet vs Bullet
-    // Currently only needed on server, but good to have logic available
-    // Skipping complex bullet-bullet interaction for shared physics for now to keep it simple
-    // unless required for client-side smoothing which usually doesn't simulate full logic.
+    // Potential candidates from Quadtree
+    let playerCandidates = players;
+    let wallCandidates = walls;
+
+    if (quadtree) {
+      const queryRect = {
+        x: Math.min(bullet.x, bullet.prevX ?? bullet.x) - bulletRadius,
+        y: Math.min(bullet.y, bullet.prevY ?? bullet.y) - bulletRadius,
+        width:
+          Math.abs(bullet.x - (bullet.prevX ?? bullet.x)) + bulletRadius * 2,
+        height:
+          Math.abs(bullet.y - (bullet.prevY ?? bullet.y)) + bulletRadius * 2,
+      };
+      const candidates = quadtree.retrieve(queryRect);
+      playerCandidates = candidates
+        .filter((obj) => obj.type === "player")
+        .map((c) => c.ref);
+      wallCandidates = candidates
+        .filter((obj) => obj.type === "wall")
+        .map((c) => c.ref || c);
+    }
 
     // Wall Collisions
-    for (const wall of walls) {
+    for (const wall of wallCandidates) {
       // If we have previous position, do a line intersection check (raycast)
       if (bullet.prevX !== undefined && bullet.prevY !== undefined) {
         const intersection = this.checkLineRectIntersection(
@@ -156,7 +173,6 @@ export const Physics = {
       }
 
       // Fallback to circle overlap (for low speeds or first frame if no prev pos)
-      // Also still good to keep as a secondary check
       const wallLeft = wall.x;
       const wallRight = wall.x + wall.width;
       const wallTop = wall.y;
@@ -174,14 +190,14 @@ export const Physics = {
 
     // Player Collisions
     const playerList =
-      players instanceof Map ? Array.from(players.values()) : players;
+      playerCandidates instanceof Map
+        ? Array.from(playerCandidates.values())
+        : playerCandidates;
 
     for (const player of playerList) {
       if (player.isDead) continue;
       if (player.id === bullet.sourceId) continue;
 
-      // Simple Circle collision for players
-      // (Could be upgraded to Circle Sweep if needed, but walls are the main issue)
       const dx = bullet.x - player.x;
       const dy = bullet.y - player.y;
       const distance = Math.sqrt(dx * dx + dy * dy);

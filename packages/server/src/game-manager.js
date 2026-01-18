@@ -9,6 +9,7 @@ import {
   BULLET_CONFIG,
   WORLD_BOUNDS,
   TANK_TYPES,
+  Quadtree,
 } from "@tank-battle/shared";
 import { MAP_CONFIG } from "@tank-battle/shared/src/map.js";
 
@@ -21,6 +22,14 @@ export class GameManager {
     this.walls = MAP_CONFIG.WALLS;
     this.colorIndex = 0;
     this.loopInterval = null;
+
+    // Initialize Quadtree
+    this.quadtree = new Quadtree({
+      x: WORLD_BOUNDS.LEFT,
+      y: WORLD_BOUNDS.TOP,
+      width: WORLD_BOUNDS.RIGHT - WORLD_BOUNDS.LEFT,
+      height: WORLD_BOUNDS.BOTTOM - WORLD_BOUNDS.TOP,
+    });
 
     // Start game loop
     this.startGameLoop();
@@ -168,9 +177,11 @@ export class GameManager {
           prevX: player.x,
           prevY: player.y,
           destroying: false,
+          sourceId: socket.id,
         },
         [],
         this.walls,
+        this.quadtree,
       );
 
       if (wallCollision) {
@@ -279,7 +290,30 @@ export class GameManager {
     this.loopInterval = setInterval(() => {
       const currentTime = Date.now();
 
-      // 1. Process physics/movement (already mostly handled by input, but could add server-side checks or momentum)
+      // 0. Update Quadtree
+      this.quadtree.clear();
+      // Add walls (could be optimized if static, but for simplicity we re-add)
+      for (const wall of this.walls) {
+        this.quadtree.insert({
+          ...wall,
+          type: "wall",
+        });
+      }
+      // Add players
+      for (const [_, player] of this.players) {
+        if (player.isDead) continue;
+        const radius = player.body?.radius ?? BODY_CONFIG.RADIUS;
+        this.quadtree.insert({
+          type: "player",
+          ref: player,
+          x: player.x - radius,
+          y: player.y - radius,
+          width: radius * 2,
+          height: radius * 2,
+        });
+      }
+
+      // 1. Process physics/movement
       // Knockback logic
       for (const [_, player] of this.players) {
         if (player.knockbackTimer > 0) {
@@ -326,6 +360,7 @@ export class GameManager {
           bullet,
           this.players,
           this.walls,
+          this.quadtree,
         );
 
         if (collision) {

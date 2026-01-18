@@ -1,4 +1,4 @@
-# Tank Battle 2D
+# Boilerplate for 2D Multiplayer Tank Battle
 
 A real-time multiplayer 2D tank battle game built with modern web technologies. This version features a scalable monorepo architecture separating client, server, and shared logic.
 

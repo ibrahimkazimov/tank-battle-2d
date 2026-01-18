@@ -2,6 +2,7 @@ import * as PIXI from "pixi.js";
 import {
   GAME_CONFIG,
   COLORS,
+  BODY_CONFIG,
   PLAYER_CONFIG,
   WORLD_BOUNDS,
   BULLET_CONFIG,
@@ -185,7 +186,7 @@ export class Renderer {
 
       // Update turret rotation
       const turret = container.getChildByName("turret");
-      if (turret) turret.rotation = player.rotation;
+      if (turret) turret.rotation = player.turret.rotation;
 
       // Update health bar
       this.updateHealthBar(container, player);
@@ -202,19 +203,22 @@ export class Renderer {
 
   createPlayerGraphics(player) {
     const container = new PIXI.Container();
+    const bodyRadius = player.body?.radius ?? BODY_CONFIG.RADIUS;
 
     // Body
     const body = new PIXI.Graphics();
-    body.circle(0, 0, PLAYER_CONFIG.RADIUS);
-    body.fill({ color: player.color });
+    body.circle(0, 0, bodyRadius);
+    body.fill({ color: player.body?.color ?? COLORS.PLAYER1 });
     body.stroke({ color: COLORS.STROKE, width: COLORS.STROKE_WIDTH });
     container.addChild(body);
 
     // Turret
     const turret = new PIXI.Graphics();
     turret.name = "turret";
-    turret.roundRect(0, -5, 30, 10, 5); // 30 length
-    turret.fill({ color: COLORS.TURRET });
+    const turretLength = player.turret?.length ?? 30;
+    const turretWidth = player.turret?.width ?? 10;
+    turret.roundRect(0, -turretWidth / 2, turretLength, turretWidth, 5);
+    turret.fill({ color: player.turret?.color ?? COLORS.TURRET });
     turret.stroke({ color: COLORS.STROKE, width: COLORS.STROKE_WIDTH });
     turret.pivot.set(0, 0); // Rotate around center of tank
     container.addChild(turret);
@@ -229,13 +233,13 @@ export class Renderer {
     });
     const text = new PIXI.Text({ text: player.name, style });
     text.anchor.set(0.5);
-    text.y = -PLAYER_CONFIG.RADIUS - 20;
+    text.y = -bodyRadius - 20;
     container.addChild(text);
 
     // Health Bar Container
     const healthBar = new PIXI.Container();
     healthBar.name = "healthBar";
-    healthBar.y = PLAYER_CONFIG.RADIUS + 15;
+    healthBar.y = bodyRadius + 15;
     container.addChild(healthBar);
 
     return container;

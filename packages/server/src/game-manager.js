@@ -1,6 +1,8 @@
 import {
   GAME_CONFIG,
   PLAYER_CONFIG,
+  BODY_CONFIG,
+  TURRET_CONFIG,
   EVENTS,
   Physics,
   COLORS,
@@ -67,7 +69,6 @@ export class GameManager {
       name: playerName,
       x: spawnPos.x,
       y: spawnPos.y,
-      rotation: 0,
       health: PLAYER_CONFIG.MAX_HEALTH,
       velocityX: 0,
       velocityY: 0,
@@ -75,9 +76,7 @@ export class GameManager {
       friction: PLAYER_CONFIG.FRICTION,
       maxSpeed: PLAYER_CONFIG.MAX_SPEED,
       fireRate: PLAYER_CONFIG.FIRE_RATE,
-      radius: PLAYER_CONFIG.RADIUS,
       isDead: false,
-      color: playerColor,
       isShooting: false,
       lastShotTime: 0,
       lastProcessedInput: null,
@@ -87,6 +86,17 @@ export class GameManager {
       knockbackX: 0,
       knockbackY: 0,
       knockbackTimer: 0,
+      // Component-based structure
+      body: {
+        radius: BODY_CONFIG.RADIUS,
+        color: playerColor,
+      },
+      turret: {
+        length: TURRET_CONFIG.LENGTH,
+        width: TURRET_CONFIG.WIDTH,
+        rotation: 0,
+        color: COLORS.TURRET,
+      },
     };
 
     this.players.set(socket.id, player);
@@ -124,7 +134,7 @@ export class GameManager {
       player.lastProcessedInput = input.sequenceNumber;
 
       if (input.rotation !== undefined) {
-        player.rotation = input.rotation;
+        player.turret.rotation = input.rotation;
       }
     }
   }
@@ -140,7 +150,7 @@ export class GameManager {
       player.isShooting = true;
       player.lastShotTime = now;
 
-      const turretLength = 30; // Could also be in shared config if consistent
+      const turretLength = player.turret.length;
       const bulletX = player.x + Math.cos(data) * turretLength; // data is rotation
       const bulletY = player.y + Math.sin(data) * turretLength;
 
@@ -219,7 +229,7 @@ export class GameManager {
 
   findSafeSpawnPosition() {
     const maxAttempts = 100;
-    const padding = PLAYER_CONFIG.RADIUS * 2;
+    const padding = BODY_CONFIG.RADIUS * 2;
     // Simple logic: pick random point within bounds that isn't inside a wall
     // Using a smaller safe area to avoid map edges
     const safeBounds = {

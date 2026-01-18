@@ -1,10 +1,23 @@
 /**
+ * @typedef {Object} BodyComponent
+ * @property {number} radius
+ * @property {string} color
+ */
+
+/**
+ * @typedef {Object} TurretComponent
+ * @property {number} length
+ * @property {number} width
+ * @property {number} rotation
+ * @property {string} color
+ */
+
+/**
  * @typedef {Object} Player
  * @property {string} id
  * @property {string} name
  * @property {number} x
  * @property {number} y
- * @property {number} rotation
  * @property {number} health
  * @property {number} velocityX
  * @property {number} velocityY
@@ -12,9 +25,10 @@
  * @property {number} friction
  * @property {number} maxSpeed
  * @property {boolean} isDead
- * @property {string} color
  * @property {number} kills
  * @property {number} deaths
+ * @property {BodyComponent} body
+ * @property {TurretComponent} turret
  */
 
 /**

@@ -1,6 +1,7 @@
 import {
   GAME_CONFIG,
   PLAYER_CONFIG,
+  BODY_CONFIG,
   WORLD_BOUNDS,
   BULLET_CONFIG,
 } from "./constants.js";
@@ -65,7 +66,7 @@ export const Physics = {
   },
 
   checkWallCollisions(player, newX, newY, walls) {
-    const playerRadius = PLAYER_CONFIG.RADIUS;
+    const playerRadius = player.body?.radius ?? BODY_CONFIG.RADIUS;
     let collision = { x: false, y: false };
 
     if (!walls) return collision;
@@ -185,7 +186,10 @@ export const Physics = {
       const dy = bullet.y - player.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (distance < PLAYER_CONFIG.RADIUS + bulletRadius) {
+      if (
+        distance <
+        (player.body?.radius ?? BODY_CONFIG.RADIUS) + bulletRadius
+      ) {
         return { type: "player", object: player };
       }
     }

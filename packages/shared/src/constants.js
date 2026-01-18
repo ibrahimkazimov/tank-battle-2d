@@ -9,9 +9,19 @@ export const GAME_CONFIG = {
   INTERPOLATION_DELAY: 100,
 };
 
+// Body Configuration
+export const BODY_CONFIG = {
+  RADIUS: 20,
+};
+
+// Turret Configuration
+export const TURRET_CONFIG = {
+  LENGTH: 30,
+  WIDTH: 10,
+};
+
 // Player Configuration
 export const PLAYER_CONFIG = {
-  RADIUS: 20,
   SPEED: 2.5,
   MAX_HEALTH: 100,
   RESPAWN_TIME: 3000,

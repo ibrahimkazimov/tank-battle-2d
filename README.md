@@ -7,11 +7,11 @@ A real-time multiplayer 2D tank battle game built with modern web technologies. 
 
 ## Features
 
-- 🎮 **Real-time Multiplayer**: Battle against other players in real-time.
-- 🕹️ **Smooth Controls**: Responsive WASD movement and mouse aiming.
-- 💥 **Physics-based Gameplay**: Projectile collisions and tank movement handled by a shared physics engine.
-- 📱 **Responsive Design**: Playable on various screen sizes with fair viewport scaling.
-- 🔗 **Session System**: Create parties and invite friends via links.
+- **Real-time Multiplayer**: Battle against other players in real-time.
+- **Smooth Controls**: Responsive WASD movement and mouse aiming.
+- **Physics-based Gameplay**: Projectile collisions and tank movement handled by a shared physics engine.
+- **Responsive Design**: Playable on various screen sizes with fair viewport scaling.
+- **Session System**: Create parties and invite friends via links.
 
 ## Tech Stack
 
@@ -39,7 +39,7 @@ This project is a monorepo managed with **npm workspaces**.
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/ibrahimkazimov/tank-battle-2d.git
    cd tank-battle-2d
    ```
 

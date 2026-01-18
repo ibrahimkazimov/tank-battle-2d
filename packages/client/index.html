@@ -1,12 +1,11 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tank Battle 2D</title>
     <link rel="stylesheet" href="./src/style.css" />
-
   </head>
   <body>
     <div id="app">
@@ -14,12 +13,21 @@
         <div class="lobby-container">
           <h1>Tank Battle 2D</h1>
           <div class="input-group">
-            <input type="text" id="nameInput" placeholder="Enter your name" maxlength="15" autocomplete="off" />
+            <input
+              type="text"
+              id="nameInput"
+              placeholder="Enter your name"
+              maxlength="15"
+              autocomplete="off"
+            />
             <button id="playButton" disabled>Join Game</button>
             <button id="createPartyButton" disabled>Create Party</button>
           </div>
-          <div id="sessionInfo" style="display: none; margin-bottom: 1rem; color: #BE7FF4;">
-              Joining Party...
+          <div
+            id="sessionInfo"
+            style="display: none; margin-bottom: 1rem; color: #be7ff4"
+          >
+            Joining Party...
           </div>
           <div class="controls-hint">
             <p>WASD / Arrows to Move</p>
@@ -27,23 +35,31 @@
           </div>
         </div>
       </div>
-      <div id="gameContainer" style="display: none;"></div>
-      <div id="gameUI" style="display: none; position: absolute; top: 10px; right: 10px;">
-          <button id="copyLinkButton" style="padding: 0.5rem 1rem; font-size: 0.9em;">Copy Invite Link</button>
+      <div id="gameContainer" style="display: none"></div>
+      <div
+        id="gameUI"
+        style="display: none; position: absolute; top: 10px; right: 10px"
+      >
+        <button
+          id="copyLinkButton"
+          style="padding: 0.5rem 1rem; font-size: 0.9em"
+        >
+          Copy Invite Link
+        </button>
       </div>
-      <div id="scoreboard" style="display: none;">
-          <table>
-              <thead>
-                  <tr>
-                      <th>Name</th>
-                      <th>Kills</th>
-                      <th>Deaths</th>
-                  </tr>
-              </thead>
-              <tbody id="scoreboardBody">
-                  <!-- Rows injected by JS -->
-              </tbody>
-          </table>
+      <div id="scoreboard" style="display: none">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Kills</th>
+              <th>Deaths</th>
+            </tr>
+          </thead>
+          <tbody id="scoreboardBody">
+            <!-- Rows injected by JS -->
+          </tbody>
+        </table>
       </div>
     </div>
     <script type="module" src="./src/main.js"></script>

@@ -4,31 +4,31 @@ export class InputManager {
       up: false,
       down: false,
       left: false,
-      right: false
+      right: false,
     };
 
-    window.addEventListener('keydown', (e) => this.handleKey(e, true));
-    window.addEventListener('keyup', (e) => this.handleKey(e, false));
+    window.addEventListener("keydown", (e) => this.handleKey(e, true));
+    window.addEventListener("keyup", (e) => this.handleKey(e, false));
   }
 
   handleKey(e, isDown) {
     if (e.repeat) return;
 
     switch (e.code) {
-      case 'KeyW':
-      case 'ArrowUp':
+      case "KeyW":
+      case "ArrowUp":
         this.keys.up = isDown;
         break;
-      case 'KeyS':
-      case 'ArrowDown':
+      case "KeyS":
+      case "ArrowDown":
         this.keys.down = isDown;
         break;
-      case 'KeyA':
-      case 'ArrowLeft':
+      case "KeyA":
+      case "ArrowLeft":
         this.keys.left = isDown;
         break;
-      case 'KeyD':
-      case 'ArrowRight':
+      case "KeyD":
+      case "ArrowRight":
         this.keys.right = isDown;
         break;
     }

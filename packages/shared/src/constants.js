@@ -5,7 +5,7 @@ export const GAME_CONFIG = {
   VIEW_DISTANCE: 1200,
   MIN_ZOOM: 1.0,
   MAX_ZOOM: 2.0,
-  TICK_RATE: 20,
+  TICK_RATE: 30,
   INTERPOLATION_DELAY: 100,
 };
 
@@ -24,7 +24,7 @@ export const PLAYER_CONFIG = {
 // Bullet Configuration
 export const BULLET_CONFIG = {
   RADIUS: 5,
-  SPEED: 15,
+  SPEED: 30,
   DAMAGE: 20,
   POWER: 0.5,
   HEALTH: 40,
@@ -35,28 +35,28 @@ export const BULLET_CONFIG = {
 
 // Colors
 export const COLORS = {
-  PLAYER1: '#1BB4D6',
-  PLAYER2: '#BE7FF4',
-  PLAYER3: '#F04E52',
-  PLAYER4: '#04E16D',
+  PLAYER1: "#1BB4D6",
+  PLAYER2: "#BE7FF4",
+  PLAYER3: "#F04E52",
+  PLAYER4: "#04E16D",
   TURRET: "#9B989A",
   BACKGROUND: "#EEEEEE",
   WALL: "#555555",
-  STROKE: '#5D5D60',
+  STROKE: "#5D5D60",
   STROKE_WIDTH: 2,
 };
 
 // Events
 export const EVENTS = {
-  CONNECT: 'connection',
-  DISCONNECT: 'disconnect',
-  GAME_STATE: 'gameState',
-  PLAYER_INPUT: 'playerInput',
-  PLAYER_DIED: 'playerDied',
-  PLAYER_RESPAWNED: 'playerRespawned',
-  PLAYER_DISCONNECTED: 'playerDisconnected',
-  SHOOT: 'shoot',
-  RESPAWN: 'respawn',
+  CONNECT: "connection",
+  DISCONNECT: "disconnect",
+  GAME_STATE: "gameState",
+  PLAYER_INPUT: "playerInput",
+  PLAYER_DIED: "playerDied",
+  PLAYER_RESPAWNED: "playerRespawned",
+  PLAYER_DISCONNECTED: "playerDisconnected",
+  SHOOT: "shoot",
+  RESPAWN: "respawn",
 };
 
 // World Boundaries
@@ -64,5 +64,5 @@ export const WORLD_BOUNDS = {
   LEFT: -1000,
   RIGHT: 1000,
   TOP: -1000,
-  BOTTOM: 1000
+  BOTTOM: 1000,
 };

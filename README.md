@@ -38,6 +38,7 @@ This project is a monorepo managed with **npm workspaces**.
 ## Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/ibrahimkazimov/tank-battle-2d.git
    cd tank-battle-2d
@@ -53,18 +54,24 @@ This project is a monorepo managed with **npm workspaces**.
 The project uses npm workspaces to manage scripts from the root directory.
 
 ### Start the Client
+
 Runs the Vite development server for the user interface.
+
 ```bash
 npm run dev:client
 ```
-*Access at `http://localhost:5173` (or port shown in terminal)*
+
+_Access at `http://localhost:5173` (or port shown in terminal)_
 
 ### Start the Server
+
 Runs the Node.js/Express backend with Nodemon.
+
 ```bash
 npm run start:server
 ```
-*Runs on port `3000` by default*
+
+_Runs on port `3000` by default_
 
 > **Note**: For multiplayer to work, both the client and server must be running.
 
@@ -90,6 +97,10 @@ tank-battle-2d/
 └── README.md
 ```
 
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to submit code, report bugs, and suggest features.
+
 ## License
 
-MIT
+[MIT](LICENSE)
